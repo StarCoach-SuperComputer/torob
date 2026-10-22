@@ -7,16 +7,19 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.160.0",
     "langchain>=1.4.7",
+    "numpy>=1.26.0",
+    "qdrant-client>=1.20.0",
     "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
 backend = "main:main"
+build-index = "build_index:main"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = ["repository", "rag", "stt", "controller", "main"]
+module-name = ["repository", "rag", "stt", "controller"]
 module-root = "src"
