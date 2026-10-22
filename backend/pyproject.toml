@@ -1,17 +1,22 @@
 [project]
 name = "backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Backend application"
 readme = "README.md"
-authors = [
-    { name = "Vesal J.", email = "v.zhoola@gmail.com" }
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.160.0",
+    "langchain>=1.4.7",
+    "uvicorn>=0.54.0",
 ]
-requires-python = ">=3.13"
-dependencies = []
 
 [project.scripts]
-backend = "backend:main"
+backend = "main:main"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = ["repository", "rag", "stt", "controller", "main"]
+module-root = "src"
