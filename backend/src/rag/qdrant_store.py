@@ -59,7 +59,7 @@ class QdrantProductStore:
         self._ensure_collection()
 
     def _ensure_collection(self) -> None:
-        """Creates the collection if it does not already exist."""
+        """Creates the collection and full-text index if it does not already exist."""
         collections_response = self.client.get_collections()
         existing_names = [col.name for col in collections_response.collections]
 
@@ -71,6 +71,21 @@ class QdrantProductStore:
                     distance=self.distance,
                 ),
             )
+
+        # Ensure full-text index on page_content and persian_title for sparse / keyword search
+        try:
+            self.client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name="page_content",
+                field_schema=rest_models.TextIndexParams(
+                    type="text",
+                    tokenizer=rest_models.TokenizerType.MULTILINGUAL,
+                    lowercase=True,
+                ),
+            )
+        except Exception:
+            # Index might already exist or be created
+            pass
 
     @staticmethod
     def _chunk_id_to_uuid(chunk_id: str) -> str:
@@ -234,6 +249,115 @@ class QdrantProductStore:
             )
 
         return results
+
+    def text_search(
+        self,
+        query: str,
+        limit: int = 5,
+        filter_dict: Optional[Dict[str, Any]] = None,
+        chunk_type: Optional[str] = None,
+    ) -> List[Document]:
+        """
+        Performs full-text keyword search directly on Qdrant payload fields.
+        """
+        conditions = []
+
+        # Full-text match condition on page_content
+        # In Persian, filter out common short stopwords that cause noisy matches
+        stopwords = {"با", "از", "در", "به", "تا", "که", "بر", "برای", "و", "یا"}
+        clean_q = query.strip()
+        if clean_q:
+            words = [w for w in clean_q.split() if len(w) > 1 and w not in stopwords]
+            if len(words) > 1:
+                # Match either the full phrase or any of the meaningful keywords
+                word_conditions = [
+                    rest_models.FieldCondition(
+                        key="page_content",
+                        match=rest_models.MatchText(text=w),
+                    )
+                    for w in words
+                ]
+                conditions.append(rest_models.Filter(should=word_conditions))
+            elif words:
+                conditions.append(
+                    rest_models.FieldCondition(
+                        key="page_content",
+                        match=rest_models.MatchText(text=words[0]),
+                    )
+                )
+
+        if chunk_type:
+            conditions.append(
+                rest_models.FieldCondition(
+                    key="chunk_type",
+                    match=rest_models.MatchValue(value=chunk_type),
+                )
+            )
+
+        if filter_dict:
+            for k, v in filter_dict.items():
+                conditions.append(
+                    rest_models.FieldCondition(
+                        key=k,
+                        match=rest_models.MatchValue(value=v),
+                    )
+                )
+
+        qdrant_filter = rest_models.Filter(must=conditions) if conditions else None
+
+        records, _ = self.client.scroll(
+            collection_name=self.collection_name,
+            scroll_filter=qdrant_filter,
+            limit=limit,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        results: List[Document] = []
+        for rec in records:
+            payload = rec.payload or {}
+            content = payload.get("page_content", "")
+            meta = {k: v for k, v in payload.items() if k != "page_content"}
+            meta["score"] = 1.0  # standard sparse hit score
+            results.append(
+                Document(
+                    page_content=content,
+                    metadata=meta,
+                    id=str(rec.id),
+                )
+            )
+
+        return results
+
+    def hybrid_search(
+        self,
+        query: str,
+        limit: int = 5,
+        candidate_multiplier: int = 3,
+        filter_dict: Optional[Dict[str, Any]] = None,
+        chunk_type: Optional[str] = None,
+        group_by_product: bool = False,
+        dense_weight: float = 1.0,
+        sparse_weight: float = 1.0,
+    ) -> List[Document]:
+        """
+        Convenience method to execute hybrid search directly on the store.
+        """
+        from .retriever import HybridRetriever
+
+        retriever = HybridRetriever(
+            store=self,
+            dense_weight=dense_weight,
+            sparse_weight=sparse_weight,
+        )
+        return retriever.retrieve(
+            query=query,
+            limit=limit,
+            candidate_multiplier=candidate_multiplier,
+            filter_dict=filter_dict,
+            chunk_type=chunk_type,
+            group_by_product=group_by_product,
+        )
 
     def count(self) -> int:
         """Returns total count of vectors stored in the collection."""

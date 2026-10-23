@@ -1,8 +1,9 @@
 from pathlib import Path
 from fastapi import FastAPI
 from repository import Repository
+from controller import home_router
 
-app = FastAPI()
+app = FastAPI(title="Torob Search & RAG API")
 
 # Data directory (relative to project root)
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
@@ -14,6 +15,10 @@ async def startup_event():
     global repo
     if DATA_DIR.exists():
         repo = Repository.load_from_directory(DATA_DIR)
+    app.state.repo = repo
+
+# Mount controller router
+app.include_router(home_router)
 
 @app.get("/health")
 async def health_check():

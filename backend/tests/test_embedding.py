@@ -262,6 +262,11 @@ class TestEmbeddingClient(unittest.TestCase):
                 self.assertEqual(len(results), 1)
                 self.assertEqual(results[0].metadata["product_id"], "prod_1")
                 self.assertEqual(results[0].metadata["brand_name"], "اپل")
+
+                # Test hybrid_search on store
+                hybrid_results = store.hybrid_search("گوشی", limit=1)
+                self.assertEqual(len(hybrid_results), 1)
+                self.assertEqual(hybrid_results[0].metadata["product_id"], "prod_1")
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
