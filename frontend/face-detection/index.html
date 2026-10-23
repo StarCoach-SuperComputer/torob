@@ -1,19 +1,54 @@
 <!DOCTYPE html>
-<html lang="en-US" dir="ltr">
+<html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Real-Time Emotion Detection</title>
+  <title>دستیار هوشمند خرید ترب | تشخیص چهره و گفتار به متن</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>Real-Time Emotion Detection</h1>
-    <div id="loadingIndicator">Loading models...</div>
-    <div id="warningMessage" class="hidden">⚠️ Unable to access the camera. Please allow camera access or ensure your device has a working camera.</div>
-    <video id="video" autoplay muted class="hidden"></video>
-    <canvas id="canvas" class="hidden"></canvas>
-    <div id="emotionResult"></div>
+    <h1>دستیار صوتی و بصری ترب</h1>
+    <div id="loadingIndicator">در حال بارگذاری مدل‌های هوش مصنوعی...</div>
+    <div id="warningMessage" class="hidden">⚠️ دسترسی به وب‌کم مقدور نیست. لطفاً اجازه دسترسی را تایید کنید.</div>
+
+    <div class="media-wrapper">
+      <video id="video" autoplay muted class="hidden"></video>
+      <canvas id="canvas" class="hidden"></canvas>
+    </div>
+
+    <div id="emotionResult">در حال شناسایی چهره...</div>
+
+    <!-- Speech To Text Section -->
+    <div class="speech-section">
+      <div class="mic-controls">
+        <button id="micBtn" class="mic-button" title="کلیک کنید تا صحبت کنید">
+          <span class="mic-icon">🎙️</span>
+          <span id="micStatusText">شروع صحبت با میکروفون</span>
+        </button>
+        <select id="langSelect" class="lang-select">
+          <option value="fa-IR" selected>فارسی (ایران)</option>
+          <option value="en-US">English (US)</option>
+        </select>
+      </div>
+
+      <div class="speech-box">
+        <textarea id="promptInput" rows="3" placeholder="متن حاصل از صدای شما اینجا قرار می‌گیرد یا می‌توانید دستی تایپ کنید..."></textarea>
+        <button id="sendBtn" class="send-button">ارسال به دستیار ترب 🚀</button>
+      </div>
+    </div>
+
+    <!-- Assistant Chat Result Section -->
+    <div id="assistantSection" class="assistant-section hidden">
+      <div class="section-title">پاسخ دستیار خرید:</div>
+      <div id="assistantReply" class="assistant-reply"></div>
+
+      <div id="intentBadge" class="intent-badge hidden"></div>
+
+      <div id="crossSellBox" class="cross-sell-box hidden"></div>
+
+      <div id="productsGrid" class="products-grid"></div>
+    </div>
   </div>
 
   <script defer src="face-api.min.js"></script>
