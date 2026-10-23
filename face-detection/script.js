@@ -6,9 +6,162 @@ let currentAge = null;
 let currentGender = null;
 let activeSessionId = null;
 
+// Identity detection state
+const STORAGE_KEY = "torob_face_identities";
+let storedIdentities = [];
+let faceMatcher = null;
+let currentIdentity = null; // { id, name, similarity }
+let latestDescriptor = null;
+let unknownFaceFrameCount = 0;
+let autoAssignNewFaces = true;
+
 // Backend API URL
 const BACKEND_URL = "http://localhost:8000";
 
+/**
+ * Storage & Identity Management
+ */
+function loadStoredIdentities() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    storedIdentities = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Error reading localStorage:", e);
+    storedIdentities = [];
+  }
+  rebuildFaceMatcher();
+  renderIdentitiesList();
+}
+
+function saveStoredIdentities() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(storedIdentities));
+  } catch (e) {
+    console.error("Error writing to localStorage:", e);
+  }
+  rebuildFaceMatcher();
+  renderIdentitiesList();
+}
+
+function rebuildFaceMatcher() {
+  if (!storedIdentities || storedIdentities.length === 0) {
+    faceMatcher = null;
+    return;
+  }
+
+  const labeledDescriptors = storedIdentities
+    .filter(item => item.descriptors && item.descriptors.length > 0)
+    .map(item => {
+      const floatDescriptors = item.descriptors.map(d => new Float32Array(d));
+      return new faceapi.LabeledFaceDescriptors(item.name || item.id, floatDescriptors);
+    });
+
+  if (labeledDescriptors.length > 0) {
+    // 0.55 distance threshold: lower = stricter, higher = more tolerant
+    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+  } else {
+    faceMatcher = null;
+  }
+}
+
+function getNextUserLabel() {
+  const existingNumbers = storedIdentities.map(u => {
+    const match = u.name.match(/کاربر\s*(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  });
+  const maxNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+  return `کاربر ${maxNum + 1}`;
+}
+
+function registerFace(customName = null) {
+  if (!latestDescriptor) {
+    alert("هیچ چهره‌ای در تصویر برای ثبت پیدا نشد!");
+    return null;
+  }
+
+  const name = customName && customName.trim() ? customName.trim() : getNextUserLabel();
+  const existing = storedIdentities.find(u => u.name === name);
+
+  if (existing) {
+    // Add additional sample (keep up to 5 samples per person to boost accuracy across angles)
+    existing.descriptors.push(Array.from(latestDescriptor));
+    if (existing.descriptors.length > 5) {
+      existing.descriptors.shift();
+    }
+  } else {
+    storedIdentities.push({
+      id: `user_${Date.now()}`,
+      name: name,
+      createdAt: new Date().toISOString(),
+      descriptors: [Array.from(latestDescriptor)]
+    });
+  }
+
+  saveStoredIdentities();
+  return name;
+}
+
+function deleteIdentity(id) {
+  storedIdentities = storedIdentities.filter(u => u.id !== id);
+  saveStoredIdentities();
+}
+
+function clearAllIdentities() {
+  if (confirm("آیا از حذف تمام چهره‌های ذخیره شده اطمینان دارید؟")) {
+    storedIdentities = [];
+    saveStoredIdentities();
+  }
+}
+
+function renderIdentitiesList() {
+  const listContainer = document.getElementById('identitiesList');
+  const countSpan = document.getElementById('storedCount');
+  if (countSpan) countSpan.innerText = storedIdentities.length;
+
+  if (!listContainer) return;
+
+  if (storedIdentities.length === 0) {
+    listContainer.innerHTML = '<span class="empty-note">هنوز هیچ چهره‌ای ذخیره نشده است.</span>';
+    return;
+  }
+
+  listContainer.innerHTML = storedIdentities.map(user => `
+    <div class="identity-chip" data-id="${user.id}">
+      <span class="chip-name">👤 ${user.name}</span>
+      <span class="chip-samples">(${user.descriptors.length} نمونه)</span>
+      <span class="chip-delete" onclick="window.onDeleteIdentity('${user.id}')" title="حذف">&times;</span>
+    </div>
+  `).join('');
+}
+
+// Expose delete handler for inline onclick
+window.onDeleteIdentity = (id) => {
+  deleteIdentity(id);
+};
+
+function updateIdentityUI(identity, noFace = false) {
+  const badge = document.getElementById('currentIdentityBadge');
+  if (!badge) return;
+
+  if (noFace) {
+    badge.className = "identity-badge none";
+    badge.innerText = "در انتظار چهره...";
+  } else if (identity) {
+    badge.className = "identity-badge recognized";
+    badge.innerText = `👤 ${identity.name} (تطابق ${identity.similarity}٪)`;
+  } else {
+    badge.className = "identity-badge unknown";
+    if (autoAssignNewFaces && unknownFaceFrameCount > 0) {
+      badge.innerText = `❓ ناشناس (در حال اختصاص شناسه... ${unknownFaceFrameCount}/5)`;
+    } else {
+      badge.innerText = "❓ شخص ناشناس";
+    }
+  }
+}
+
+/**
+ * Load face-api.js Models
+ */
 async function loadModels() {
   try {
     await faceapi.nets.ssdMobilenetv1.loadFromUri('models');
@@ -20,6 +173,7 @@ async function loadModels() {
     console.log("Models loaded successfully.");
     document.getElementById('loadingIndicator').style.display = 'none';
 
+    loadStoredIdentities();
     startVideo();
   } catch (error) {
     console.error("Error loading models:", error);
@@ -37,7 +191,7 @@ function startVideo() {
       video.classList.remove('hidden');
       warningMessage.classList.add('hidden');
       video.play();
-      detectEmotions();
+      detectFaces();
     })
     .catch((error) => {
       console.error("Error accessing webcam:", error);
@@ -45,7 +199,7 @@ function startVideo() {
     });
 }
 
-async function detectEmotions() {
+async function detectFaces() {
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   const emotionResult = document.getElementById('emotionResult');
@@ -65,19 +219,25 @@ async function detectEmotions() {
   setInterval(async () => {
     if (!video.videoWidth || !video.videoHeight) return;
 
+    // Detect faces with landmarks, expressions, age/gender, AND face descriptors
     const detections = await faceapi.detectAllFaces(video)
       .withFaceLandmarks()
       .withFaceExpressions()
-      .withAgeAndGender();
+      .withAgeAndGender()
+      .withFaceDescriptors();
 
     const resizedDetections = faceapi.resizeResults(detections, getDisplaySize());
 
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    faceapi.draw.drawDetections(canvas, resizedDetections);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw landmarks and expressions
     faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
     faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
 
     if (detections[0]) {
+      latestDescriptor = detections[0].descriptor;
+
       const expressions = detections[0].expressions;
       const sorted = Object.entries(expressions).sort((a, b) => b[1] - a[1]);
       currentEmotion = sorted[0][0];
@@ -98,9 +258,89 @@ async function detectEmotions() {
       const emotionFa = emotionFaMap[currentEmotion] || currentEmotion;
 
       emotionResult.innerText = `چهره: ${genderFa}، حدود ${currentAge} سال | حالت چهره: ${emotionFa}`;
+
+      // Identity Matching for primary face
+      let matchedLabel = null;
+      let matchSimilarity = 0;
+
+      if (faceMatcher && detections[0].descriptor) {
+        const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
+        if (bestMatch.label !== 'unknown') {
+          matchedLabel = bestMatch.label;
+          matchSimilarity = Math.max(0, Math.min(100, Math.round((1 - bestMatch.distance) * 100)));
+        }
+      }
+
+      if (matchedLabel) {
+        unknownFaceFrameCount = 0;
+        const matchedUser = storedIdentities.find(u => u.name === matchedLabel);
+        currentIdentity = {
+          id: matchedUser ? matchedUser.id : matchedLabel,
+          name: matchedLabel,
+          similarity: matchSimilarity
+        };
+        updateIdentityUI(currentIdentity);
+      } else {
+        currentIdentity = null;
+
+        // Auto-assign new identity if an unknown face stays for 5 checks (~2s)
+        if (autoAssignNewFaces) {
+          unknownFaceFrameCount++;
+          updateIdentityUI(null);
+          if (unknownFaceFrameCount >= 5) {
+            const newName = registerFace();
+            unknownFaceFrameCount = 0;
+            console.log(`Auto-assigned new identity: ${newName}`);
+          }
+        } else {
+          unknownFaceFrameCount = 0;
+          updateIdentityUI(null);
+        }
+      }
     } else {
+      latestDescriptor = null;
+      currentIdentity = null;
+      unknownFaceFrameCount = 0;
       emotionResult.innerText = "هیچ چهره‌ای در کادر دوربین شناسایی نشد.";
+      updateIdentityUI(null, true);
     }
+
+    // Draw customized bounding boxes with identity badge for each detected face
+    resizedDetections.forEach((detection) => {
+      const { x, y, width, height } = detection.detection.box;
+      let label = "ناشناس";
+      let boxColor = "#f59e0b"; // amber for unknown
+
+      if (faceMatcher && detection.descriptor) {
+        const match = faceMatcher.findBestMatch(detection.descriptor);
+        if (match.label !== 'unknown') {
+          const sim = Math.max(0, Math.min(100, Math.round((1 - match.distance) * 100)));
+          label = `👤 ${match.label} (${sim}٪)`;
+          boxColor = "#10b981"; // emerald for recognized
+        }
+      } else if (autoAssignNewFaces && unknownFaceFrameCount > 0) {
+        label = `⏳ ثبت خودکار (${unknownFaceFrameCount}/5)...`;
+      }
+
+      // Draw bounding box
+      ctx.strokeStyle = boxColor;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, width, height);
+
+      // Draw label background badge above face
+      ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
+      const padding = 8;
+      const textWidth = ctx.measureText(label).width;
+      const badgeHeight = 24;
+      const badgeY = Math.max(0, y - badgeHeight - 4);
+
+      ctx.fillStyle = boxColor;
+      ctx.fillRect(x, badgeY, textWidth + (padding * 2), badgeHeight);
+
+      // Draw label text
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(label, x + padding, badgeY + 16);
+    });
   }, 400);
 }
 
@@ -211,8 +451,10 @@ async function sendPromptToAssistant() {
   crossSellBox.classList.add('hidden');
   productsGrid.innerHTML = "";
 
-  // 1. First, try to extract complete vision persona if frame available
+  // 1. Prepare customer profile with identified user ID & name
   let customerProfile = {
+    customer_id: currentIdentity ? currentIdentity.id : null,
+    customer_name: currentIdentity ? currentIdentity.name : "ناشناس",
     gender: currentGender === "male" ? "مرد" : (currentGender === "female" ? "زن" : null),
     age_group: currentAge ? `${currentAge} سال` : null,
     mood_or_expression: currentEmotion,
@@ -230,6 +472,7 @@ async function sendPromptToAssistant() {
       if (visionRes.ok) {
         const vData = await visionRes.json();
         customerProfile = {
+          ...customerProfile,
           gender: vData.gender || customerProfile.gender,
           age_group: vData.age_group || customerProfile.age_group,
           style_preference: vData.style_preference || customerProfile.style_preference,
@@ -305,6 +548,41 @@ async function sendPromptToAssistant() {
 window.onload = async () => {
   await loadModels();
   initSpeechToText();
+
+  // Identity UI Controls
+  const autoCheckbox = document.getElementById('autoAssignCheckbox');
+  if (autoCheckbox) {
+    autoAssignNewFaces = autoCheckbox.checked;
+    autoCheckbox.addEventListener('change', (e) => {
+      autoAssignNewFaces = e.target.checked;
+      unknownFaceFrameCount = 0;
+    });
+  }
+
+  const registerBtn = document.getElementById('registerFaceBtn');
+  const nameInput = document.getElementById('manualNameInput');
+  if (registerBtn) {
+    registerBtn.addEventListener('click', () => {
+      const customName = nameInput ? nameInput.value : "";
+      const registeredName = registerFace(customName);
+      if (registeredName) {
+        if (nameInput) nameInput.value = "";
+      }
+    });
+  }
+
+  const toggleManageBtn = document.getElementById('toggleManageBtn');
+  const manageDrawer = document.getElementById('manageIdentitiesDrawer');
+  if (toggleManageBtn && manageDrawer) {
+    toggleManageBtn.addEventListener('click', () => {
+      manageDrawer.classList.toggle('hidden');
+    });
+  }
+
+  const clearBtn = document.getElementById('clearAllIdentitiesBtn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', clearAllIdentities);
+  }
 
   document.getElementById('sendBtn').addEventListener('click', sendPromptToAssistant);
 

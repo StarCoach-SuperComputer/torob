@@ -19,6 +19,43 @@
 
     <div id="emotionResult">در حال شناسایی چهره...</div>
 
+    <!-- Face Identity Detection & Management Section -->
+    <div class="identity-section">
+      <div class="identity-header">
+        <div class="identity-current">
+          <span class="identity-title">هویت شخص در کادر:</span>
+          <span id="currentIdentityBadge" class="identity-badge unknown">در حال بررسی...</span>
+        </div>
+        <div class="auto-assign-toggle">
+          <label title="اختصاص خودکار شناسه به افراد جدید پس از ۲ ثانیه قرار گرفتن روبروی دوربین">
+            <input type="checkbox" id="autoAssignCheckbox" checked>
+            <span>ثبت خودکار افراد جدید با شناسه جدید</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="identity-controls">
+        <input type="text" id="manualNameInput" placeholder="نام یا شناسه سفارشی (پیش‌فرض: کاربر ۱، ۲...)" />
+        <button id="registerFaceBtn" class="btn-identity" title="ثبت چهره فعلی یا افزودن نمونه جدید برای ارتقای دقت">
+          ➕ ثبت / به‌روزرسانی چهره
+        </button>
+        <button id="toggleManageBtn" class="btn-secondary">
+          👥 مدیریت چهره‌ها (<span id="storedCount">۰</span>)
+        </button>
+      </div>
+
+      <!-- Manage Stored Identities Drawer -->
+      <div id="manageIdentitiesDrawer" class="identities-drawer hidden">
+        <div class="drawer-header">
+          <span>چهره‌های ذخیره شده در مرورگر (Client-side):</span>
+          <button id="clearAllIdentitiesBtn" class="btn-danger-text">پاک‌سازی همه</button>
+        </div>
+        <div id="identitiesList" class="identities-chips-list">
+          <span class="empty-note">هنوز هیچ چهره‌ای ذخیره نشده است.</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Speech To Text Section -->
     <div class="speech-section">
       <div class="mic-controls">
