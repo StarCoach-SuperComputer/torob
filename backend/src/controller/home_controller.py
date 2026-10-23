@@ -30,7 +30,7 @@ def get_agent(repo=None) -> ShoppingAgent:
     if _agent is None:
         retriever = get_retriever()
         _agent = ShoppingAgent(retriever=retriever, repository=repo)
-    elif repo and _agent.repository is None:
+    elif repo is not None:
         _agent.repository = repo
     return _agent
 
@@ -163,7 +163,7 @@ async def search_products(request_body: SearchRequest, req: Request):
 
         details = None
         if request_body.with_details and repo and product_id:
-            details = repo.get_product_details(product_id)
+            details = repo.get_product_details_dict(product_id)
 
         items.append(
             SearchResultItem(
@@ -358,5 +358,43 @@ async def extract_vision_persona_upload(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image upload extraction failed: {str(e)}")
+
+
+@router.get("/products/{product_id}/details")
+async def get_product_details_endpoint(product_id: str, req: Request):
+    """
+    Returns full product details along with real offers and shops from Shops & Offers repositories.
+    """
+    repo = getattr(req.app.state, "repo", None)
+    if not repo:
+        raise HTTPException(status_code=500, detail="Repository not initialized")
+    details = repo.get_product_details_dict(product_id)
+    if not details:
+        raise HTTPException(status_code=404, detail=f"Product with ID '{product_id}' not found")
+    return details
+
+
+@router.get("/shops/{shop_id}")
+async def get_shop_details_endpoint(shop_id: str, req: Request):
+    """
+    Returns detailed information about a shop from Shops repository.
+    """
+    repo = getattr(req.app.state, "repo", None)
+    if not repo:
+        raise HTTPException(status_code=500, detail="Repository not initialized")
+    shop = repo.shops.get_by_id(shop_id)
+    if not shop:
+        raise HTTPException(status_code=404, detail=f"Shop with ID '{shop_id}' not found")
+    return {
+        "shop_id": shop.shop_id,
+        "name": shop.name,
+        "address": shop.address,
+        "location_label": shop.location_label,
+        "supports_fast_delivery": shop.supports_fast_delivery,
+        "website_url": shop.website_url,
+        "instagram": shop.instagram,
+        "category_names": shop.category_names,
+        "payment_options": shop.payment_options,
+    }
 
 

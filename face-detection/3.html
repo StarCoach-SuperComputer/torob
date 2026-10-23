@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>تیشرت مشکی - مقایسه قیمت و خرید در ترب</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Vazirmatn -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #0d1218;
+      color: #f1f5f9;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom scrollbar for inner container */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #233041;
+      border-radius: 9999px;
+    }
+
+    /* Press click feedback */
+    .press-action {
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .press-action:active {
+      transform: scale(0.96);
+    }
+
+    /* Pulse toast keyframe */
+    @keyframes slideUpFade {
+      from {
+        opacity: 0;
+        transform: translate(-50%, 16px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    }
+    .animate-toast {
+      animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-0 sm:py-6 sm:px-4">
+
+  <!-- Mobile Screen Shell Container -->
+  <main class="w-full max-w-[430px] min-h-[100dvh] sm:min-h-0 sm:max-h-[920px] bg-[#10171f] sm:rounded-[36px] sm:border sm:border-[#222e40] sm:shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden relative">
+
+    <!-- Top Sticky Sub-Header with Torob Quick Return -->
+    <header class="w-full px-4 pt-3.5 pb-2 flex items-center justify-between z-20 bg-[#10171f]/90 backdrop-blur-md border-b border-white/[0.04]">
+      <button onclick="window.history.back()" title="بازگشت" class="w-8 h-8 rounded-full bg-[#17222d] hover:bg-[#202d3c] flex items-center justify-center text-gray-300 transition-colors press-action">
+        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+      </button>
+      <div class="text-xs font-medium text-gray-400">مشخصات و فروشگاه‌ها</div>
+      <button id="shareBtn" title="اشتراک‌گذاری" class="w-8 h-8 rounded-full bg-[#17222d] hover:bg-[#202d3c] flex items-center justify-center text-gray-300 transition-colors press-action">
+        <i data-lucide="share-2" class="w-4 h-4"></i>
+      </button>
+    </header>
+
+    <!-- Scrollable Body Content -->
+    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-8">
+
+      <!-- 1. Top Featured Image Card -->
+      <section class="w-full bg-[#17222d] border border-[#243345] rounded-[26px] p-4 flex flex-col items-center shadow-lg relative">
+        
+        <!-- White Inner Canvas for Crisp Product Cutout -->
+        <div class="w-full aspect-square rounded-[20px] bg-white flex items-center justify-center relative overflow-hidden p-3 shadow-inner">
+          
+          <!-- Heart / Favorite Button (Top-Left in RTL) -->
+          <button 
+            id="wishlistBtn" 
+            aria-label="نشان کردن محصول" 
+            class="absolute top-3 left-3 w-9 h-9 rounded-full bg-white/85 hover:bg-white backdrop-blur-sm flex items-center justify-center shadow-sm text-gray-400 transition-all duration-200 press-action z-10"
+          >
+            <i id="heartIcon" data-lucide="heart" class="w-5 h-5 text-gray-500 stroke-[1.8] transition-colors"></i>
+          </button>
+
+          <!-- High-Resolution Black T-Shirt Flat Lay -->
+          <img 
+            id="mainProductImg"
+            src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=85" 
+            alt="تیشرت مشکی لانگ اورسایز" 
+            class="w-full h-full object-contain filter contrast-[1.05] drop-shadow-md select-none transition-transform duration-300 hover:scale-105"
+            loading="eager"
+          />
+        </div>
+      </section>
+
+      <!-- 2. Product Title & Breadcrumbs -->
+      <section class="text-right space-y-1.5 px-1">
+        <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+          تیشرت مشکی
+        </h1>
+
+        <!-- Product Category Subtitle -->
+        <p class="text-[12px] text-gray-400 font-normal leading-relaxed">
+          گوشی موبایل | سامسونگ | سری A | گارانتی شرکتی ۱۸ ماهه
+        </p>
+
+        <!-- Price Range & Total Sellers Count -->
+        <div class="pt-2 flex items-baseline justify-start gap-2.5 flex-wrap">
+          <span class="text-lg font-black text-[#eb445a]">
+            از ۵۰۰ هزار تومن
+          </span>
+          <span class="text-xs text-gray-400 font-medium">
+            ۱۷ فروشگاه
+          </span>
+        </div>
+      </section>
+
+      <!-- 3. Color Selection Swatches ('رنگ محصول') -->
+      <section class="space-y-2.5 px-1">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-gray-300 font-medium">رنگ محصول</span>
+          <span id="selectedColorName" class="text-gray-400 text-[11.5px]">سرمه‌ای عمیق</span>
+        </div>
+
+        <div class="flex items-center gap-3.5 justify-start">
+          
+          <!-- Swatch 1: Deep Blue (Active by default matching reference ring) -->
+          <button 
+            data-color-name="سرمه‌ای عمیق"
+            class="color-swatch relative w-9 h-9 rounded-full bg-[#2b436e] ring-2 ring-white ring-offset-2 ring-offset-[#10171f] transition-all press-action"
+            title="سرمه‌ای"
+          ></button>
+
+          <!-- Swatch 2: Charcoal / Deep Black -->
+          <button 
+            data-color-name="مشکی زغالی"
+            class="color-swatch relative w-9 h-9 rounded-full bg-[#1b1c1e] hover:ring-2 hover:ring-white/40 ring-offset-2 ring-offset-[#10171f] transition-all press-action"
+            title="مشکی"
+          ></button>
+
+          <!-- Swatch 3: Cream / Off-White -->
+          <button 
+            data-color-name="کرم استخوانی"
+            class="color-swatch relative w-9 h-9 rounded-full bg-[#e6decb] hover:ring-2 hover:ring-white/40 ring-offset-2 ring-offset-[#10171f] transition-all press-action"
+            title="کرم"
+          ></button>
+
+          <!-- Swatch 4: Mauve / Dusty Purple -->
+          <button 
+            data-color-name="یاسی ارغوانی"
+            class="color-swatch relative w-9 h-9 rounded-full bg-[#895c80] hover:ring-2 hover:ring-white/40 ring-offset-2 ring-offset-[#10171f] transition-all press-action"
+            title="ارغوانی"
+          ></button>
+
+          <!-- Swatch 5: Mustard Gold -->
+          <button 
+            data-color-name="خردلی طلایی"
+            class="color-swatch relative w-9 h-9 rounded-full bg-[#c99c27] hover:ring-2 hover:ring-white/40 ring-offset-2 ring-offset-[#10171f] transition-all press-action"
+            title="خردلی"
+          ></button>
+
+        </div>
+      </section>
+
+      <!-- 4. Material Pill Selector ('جنس محصول') -->
+      <section class="space-y-2.5 px-1">
+        <div class="text-xs text-gray-300 font-medium">جنس محصول</div>
+        
+        <div class="flex items-center gap-2.5 justify-start">
+          
+          <!-- Option: نخی -->
+          <button class="material-chip bg-[#222c39] hover:bg-[#2b3746] text-gray-200 text-xs font-semibold py-2 px-5 rounded-xl border border-transparent transition-all press-action">
+            نخی
+          </button>
+
+          <!-- Option: پلی استر (Active in Coral Red as shown in screenshot) -->
+          <button class="material-chip bg-[#e53945] text-white text-xs font-bold py-2 px-5 rounded-xl shadow-md shadow-red-950/40 border border-[#e53945] transition-all press-action">
+            پلی استر
+          </button>
+
+          <!-- Option: پنبه -->
+          <button class="material-chip bg-[#222c39] hover:bg-[#2b3746] text-gray-200 text-xs font-semibold py-2 px-5 rounded-xl border border-transparent transition-all press-action">
+            پنبه
+          </button>
+
+        </div>
+      </section>
+
+      <!-- 5. Stores / Sellers List Section ('فروشگاه‌ها') -->
+      <section class="space-y-3 pt-2">
+        <div class="flex items-center justify-between px-1">
+          <h2 class="text-sm font-bold text-gray-200">فروشگاه‌ها</h2>
+          <span class="text-[11px] text-gray-400">مرتب‌سازی: کمترین قیمت</span>
+        </div>
+
+        <!-- Master Sellers Wrapper (7 Store Listings matching screenshot) -->
+        <div class="space-y-2.5" id="sellersListContainer">
+          
+          <!-- Seller Item Row Template x 7 -->
+          <script>
+            // Generate standard seller cards
+            const sellerNames = [
+              { name: 'تیپسی شاپ', years: '۲ سال در ترب', city: 'تهران، آکام دیجی', price: '۵۲۵/۰۰۰/۰۰۰ تومان' },
+              { name: 'تیپسی شاپ', years: '۲ سال در ترب', city: 'تهران، آکام دیجی', price: '۵۲۵/۰۰۰/۰۰۰ تومان' },
+              { name: 'تیپسی شاپ', years: '۲ سال در ترب', city: 'تهران، آکام دیجی', price: '۵۲۵/۰۰۰/۰۰۰ تومان' },
+              { name: 'تیپسی شاپ', years: '۲ سال در ترب', city: 'تهران، آکام دیجی', price: '۵۲۵/۰۰۰/۰۰۰ تومان' },
+              { name: 'تیپسی شاپ', years: '۲ سال در ترب', city: 'تهران، آکام دیجی', price: '۵۲۵/۰۰۰/۰۰۰ تومان' },
+              { name: 'تیپسی شاپ', years: '۲ سال در ترب', city: 'تهران، آکام دیجی', price: '۵۲۵/۰۰۰/۰۰۰ تومان' },
+              { name: 'تیپسی شاپ', years: '۲ سال در ترب', city: 'تهران، آکام دیجی', price: '۵۲۵/۰۰۰/۰۰۰ تومان' }
+            ];
+
+            sellerNames.forEach((item, idx) => {
+              document.write(`
+                <article class="w-full bg-[#1b2634] hover:bg-[#202c3c] border border-[#253447] rounded-[20px] p-3.5 flex items-center justify-between transition-colors shadow-sm">
+                  
+                  <!-- Left Side: Price & Purchase Action Button -->
+                  <div class="flex flex-col items-start gap-2.5">
+                    <span class="text-xs sm:text-[13px] font-bold text-white tracking-normal font-mono sm:font-sans">
+                      ${item.price}
+                    </span>
+                    <button 
+                      onclick="openStoreModal('${item.name}', '${item.price}')"
+                      class="bg-[#e53945] hover:bg-[#d42d39] active:scale-95 text-white text-[11.5px] font-bold py-1.5 px-4 rounded-xl shadow-md shadow-red-950/30 transition-all press-action whitespace-nowrap"
+                    >
+                      مشاهده و خرید
+                    </button>
+                  </div>
+
+                  <!-- Right Side: Store Title, Torob Badge, Location -->
+                  <div class="flex flex-col items-end text-right">
+                    <h3 class="text-[13.5px] font-bold text-gray-100">
+                      ${item.name}
+                    </h3>
+                    
+                    <!-- Soft Green Badge: "۲ سال در ترب" -->
+                    <span class="inline-block mt-1 bg-[#d2eed8] text-[#236e39] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      ${item.years}
+                    </span>
+
+                    <!-- Location / Vendor Details -->
+                    <span class="text-[11px] text-gray-400 mt-1">
+                      ${item.city}
+                    </span>
+                  </div>
+
+                </article>
+              `);
+            });
+          </script>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Quick Purchase Modal (Bottom Sheet) -->
+    <div id="storeModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end justify-center transition-all">
+      <div class="w-full max-w-[430px] bg-[#16212e] border-t border-[#293a50] rounded-t-[28px] p-5 shadow-2xl flex flex-col text-right">
+        <div class="w-10 h-1 bg-gray-500 rounded-full mx-auto mb-4 cursor-pointer" onclick="closeStoreModal()"></div>
+        
+        <div class="flex items-center justify-between mb-3 border-b border-gray-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span id="modalStoreName" class="text-sm font-bold text-white">تیپسی شاپ</span>
+          </div>
+          <span class="text-xs text-emerald-400 font-semibold bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-800/40">آماده ارسال</span>
+        </div>
+
+        <p class="text-xs text-gray-300 leading-relaxed mb-4">
+          شما در حال انتقال به درگاه مستقیم فروشگاه منتخب در وبسایت ترب هستید. تمامی پرداخت‌ها از طریق درگاه امن شاپرک با ضمانت ۷ روز بازگشت وجه ترب انجام می‌پذیرد.
+        </p>
+
+        <div class="bg-[#111822] p-3 rounded-xl border border-gray-800 flex justify-between items-center mb-4 text-xs">
+          <span class="text-gray-400">مبلغ نهایی با تخفیف:</span>
+          <span id="modalStorePrice" class="font-bold text-red-400 text-sm"></span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="confirmPurchase()" class="bg-[#e53945] hover:bg-[#d42d39] active:scale-95 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-red-950/40">
+            <span>انتقال به درگاه پرداخت</span>
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="closeStoreModal()" class="bg-[#222d3b] hover:bg-[#2c394a] text-gray-300 font-medium py-2.5 rounded-xl text-xs transition-all">
+            انصراف
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#1b2635]/95 border border-[#32455c] text-white text-xs px-4 py-2.5 rounded-2xl shadow-2xl z-50 flex items-center gap-2 whitespace-nowrap animate-toast">
+      <i id="toastIcon" data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+      <span id="toastText">عملیات انجام شد</span>
+    </div>
+
+  </main>
+
+  <script>
+    // Initialize Lucide vector icons
+    lucide.createIcons();
+
+    // Elements
+    const wishlistBtn = document.getElementById('wishlistBtn');
+    const heartIcon = document.getElementById('heartIcon');
+    const colorSwatches = document.querySelectorAll('.color-swatch');
+    const selectedColorName = document.getElementById('selectedColorName');
+    const materialChips = document.querySelectorAll('.material-chip');
+    const storeModal = document.getElementById('storeModal');
+    const modalStoreName = document.getElementById('modalStoreName');
+    const modalStorePrice = document.getElementById('modalStorePrice');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    const toastIcon = document.getElementById('toastIcon');
+    const shareBtn = document.getElementById('shareBtn');
+
+    let isWishlisted = false;
+
+    // Toast Utility
+    let toastTimeout;
+    function showToast(text, isFavorite = false) {
+      toastText.textContent = text;
+      toastIcon.setAttribute('data-lucide', isFavorite ? 'heart' : 'check-circle');
+      toastIcon.className = `w-4 h-4 ${isFavorite ? 'text-red-400 fill-red-400' : 'text-emerald-400'}`;
+      toast.classList.remove('hidden');
+      lucide.createIcons();
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2300);
+    }
+
+    // Wishlist Toggle
+    wishlistBtn.addEventListener('click', () => {
+      isWishlisted = !isWishlisted;
+      if (isWishlisted) {
+        heartIcon.classList.add('fill-red-500', 'text-red-500');
+        heartIcon.classList.remove('text-gray-500');
+        showToast('محصول به لیست علاقه‌مندی‌ها اضافه شد', true);
+      } else {
+        heartIcon.classList.remove('fill-red-500', 'text-red-500');
+        heartIcon.classList.add('text-gray-500');
+        showToast('محصول از نشان‌شده‌ها حذف شد');
+      }
+    });
+
+    // Color Swatch Selection
+    colorSwatches.forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        // Reset rings
+        colorSwatches.forEach(s => {
+          s.classList.remove('ring-2', 'ring-white', 'ring-offset-2', 'ring-offset-[#10171f]');
+          s.classList.add('hover:ring-2', 'hover:ring-white/40');
+        });
+
+        // Set active ring
+        swatch.classList.add('ring-2', 'ring-white', 'ring-offset-2', 'ring-offset-[#10171f]');
+        swatch.classList.remove('hover:ring-2', 'hover:ring-white/40');
+        
+        const name = swatch.getAttribute('data-color-name');
+        selectedColorName.textContent = name;
+        showToast(`رنگ «${name}» انتخاب شد`);
+      });
+    });
+
+    // Material Chip Selection
+    materialChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        materialChips.forEach(c => {
+          c.className = 'material-chip bg-[#222c39] hover:bg-[#2b3746] text-gray-200 text-xs font-semibold py-2 px-5 rounded-xl border border-transparent transition-all press-action';
+        });
+
+        chip.className = 'material-chip bg-[#e53945] text-white text-xs font-bold py-2 px-5 rounded-xl shadow-md shadow-red-950/40 border border-[#e53945] transition-all press-action';
+        showToast(`جنس «${chip.textContent.trim()}» انتخاب گردید`);
+      });
+    });
+
+    // Modal Operations
+    function openStoreModal(name, price) {
+      modalStoreName.textContent = name;
+      modalStorePrice.textContent = price;
+      storeModal.classList.remove('hidden');
+    }
+
+    function closeStoreModal() {
+      storeModal.classList.add('hidden');
+    }
+
+    storeModal.addEventListener('click', (e) => {
+      if (e.target === storeModal) closeStoreModal();
+    });
+
+    function confirmPurchase() {
+      closeStoreModal();
+      showToast('در حال انتقال به صفحه سفارش...', false);
+    }
+
+    // Share link handler using standard fallback
+    shareBtn.addEventListener('click', () => {
+      const dummyUrl = window.location.href;
+      const el = document.createElement('textarea');
+      el.value = dummyUrl;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      showToast('لینک کالا در کلیپ‌بورد کپی شد');
+    });
+  </script>
+</body>
+</html>

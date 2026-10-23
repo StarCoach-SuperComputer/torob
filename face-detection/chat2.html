@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ترب‌یار - دستیار هوشمند خرید ترب</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Vazirmatn -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #0b0f14;
+      color: #f1f5f9;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom thin scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+
+    /* Press click feedback */
+    .press-action {
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .press-action:active {
+      transform: scale(0.96);
+    }
+
+    /* Pulse wave effect for live status & mic */
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
+    }
+    .animate-pulse-subtle {
+      animation: subtlePulse 2s infinite ease-in-out;
+    }
+
+    @keyframes micGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(229, 57, 69, 0.4); }
+      50% { box-shadow: 0 0 28px rgba(229, 57, 69, 0.75); }
+    }
+    .animate-mic-glow {
+      animation: micGlow 2.4s infinite ease-in-out;
+    }
+
+    /* PiP Floating Widget smooth float */
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+    .animate-float {
+      animation: gentleFloat 4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-0 sm:py-4 sm:px-4">
+
+  <!-- Mobile Shell Device Container -->
+  <main class="w-full max-w-[430px] min-h-[100dvh] sm:min-h-0 sm:h-[890px] bg-[#121922] sm:rounded-[36px] sm:border sm:border-[#222e40] sm:shadow-[0_25px_65px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden relative">
+
+    <!-- Top Sub-Header: Branding & Assistant Identity -->
+    <header class="w-full px-5 pt-4 pb-3 flex items-center justify-between border-b border-white/[0.05] bg-[#121922]/95 backdrop-blur-md z-30">
+      
+      <!-- Top Left Brand Label -->
+      <span class="text-[11px] text-gray-500 font-normal tracking-tight select-none">
+        دستیار هوشمند خرید ترب
+      </span>
+
+      <!-- Top Right: Torob Yar Identity -->
+      <div class="flex items-center gap-3">
+        <div class="flex flex-col items-end text-right">
+          <span class="text-base font-black text-white leading-tight">ترب‌یار</span>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-subtle"></span>
+            <span class="text-[11px] text-emerald-400 font-medium">آنلاین و در حال گوش دادن</span>
+          </div>
+        </div>
+
+        <!-- Robot Circular Avatar with Online indicator badge -->
+        <div class="relative flex-shrink-0">
+          <div class="w-11 h-11 rounded-full bg-[#e83e58] flex items-center justify-center shadow-lg shadow-red-950/40">
+            <i data-lucide="bot" class="w-6 h-6 text-white stroke-[2.2]"></i>
+          </div>
+          <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-[#121922] rounded-full"></span>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- Scrollable Chat Stream Container -->
+    <div id="chatFeed" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-28 relative">
+
+      <!-- 1. User Bubble: "مشکی" -->
+      <div class="flex justify-start">
+        <div class="bg-[#e53945] text-white text-sm font-bold px-5 py-2.5 rounded-2xl shadow-md shadow-red-950/25">
+          مشکی
+        </div>
+      </div>
+
+      <!-- 2. Assistant Bubble 1 -->
+      <div class="flex justify-end">
+        <div class="bg-[#1b2535] text-gray-100 text-[13.5px] leading-relaxed font-normal p-4 rounded-2xl max-w-[82%] text-right border border-[#243346] shadow-sm">
+          خیلی خوش سلیقه ای. حالا بگو چه سایزی میخوای؟
+        </div>
+      </div>
+
+      <!-- 3. User Bubble: "ایکس لارج" -->
+      <div class="flex justify-start">
+        <div class="bg-[#e53945] text-white text-sm font-bold px-5 py-2.5 rounded-2xl shadow-md shadow-red-950/25">
+          ایکس لارج
+        </div>
+      </div>
+
+      <!-- 4. Assistant Bubble 2 -->
+      <div class="flex justify-end">
+        <div class="bg-[#1b2535] text-gray-100 text-[13px] leading-relaxed font-normal py-3 px-4 rounded-2xl max-w-[85%] text-right border border-[#243346] shadow-sm">
+          برات بهترین تیشرت مدیوم مشکی رو پیدا کردم
+        </div>
+      </div>
+
+      <!-- 5. First Product Card (Plain T-Shirt) -->
+      <div class="w-full bg-[#182230] hover:bg-[#1c2838] border border-[#263447] rounded-[22px] p-3 flex items-center justify-between transition-colors shadow-md press-action cursor-pointer" onclick="openProductDetail('تیشرت مشکی لانگ اورسایز', 'از ۲۵۷,۰۰۰ تومان')">
+        
+        <!-- Left Column: Specs, Price, Sellers & Link -->
+        <div class="flex flex-col items-start justify-center gap-1.5 pr-2">
+          <h3 class="text-[13.5px] font-bold text-gray-100 leading-snug">
+            تیشرت مشکی سایز ایکس لارج
+          </h3>
+          <span class="text-xs font-black text-gray-200">
+            از ۲۵۷,۰۰۰ تومان
+          </span>
+          <span class="text-[11px] text-gray-400 font-medium">
+            ۱۷ فروشنده
+          </span>
+          <div class="pt-1 flex items-center gap-1 text-[#e53945] text-xs font-bold hover:underline">
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+            <span>مشاهده</span>
+          </div>
+        </div>
+
+        <!-- Right Column: Product Image on White Rounded Backing -->
+        <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white p-2 flex items-center justify-center flex-shrink-0 shadow-inner overflow-hidden">
+          <img 
+            src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=350&q=80" 
+            alt="تیشرت مشکی سایز ایکس لارج"
+            class="w-full h-full object-contain filter contrast-105"
+            loading="lazy"
+          />
+        </div>
+      </div>
+
+      <!-- 6. Second Product Card (Male Model in Black T-Shirt) -->
+      <div class="w-full bg-[#182230] hover:bg-[#1c2838] border border-[#263447] rounded-[22px] p-3 flex items-center justify-between transition-colors shadow-md press-action cursor-pointer" onclick="openProductDetail('تیشرت پنبه مشکی فیت', 'از ۲۵۷,۰۰۰ تومان')">
+        
+        <!-- Left Column: Specs, Price, Sellers & Link -->
+        <div class="flex flex-col items-start justify-center gap-1.5 pr-2">
+          <h3 class="text-[13.5px] font-bold text-gray-100 leading-snug">
+            تیشرت مشکی سایز ایکس لارج
+          </h3>
+          <span class="text-xs font-black text-gray-200">
+            از ۲۵۷,۰۰۰ تومان
+          </span>
+          <span class="text-[11px] text-gray-400 font-medium">
+            ۱۷ فروشنده
+          </span>
+          <div class="pt-1 flex items-center gap-1 text-[#e53945] text-xs font-bold hover:underline">
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+            <span>مشاهده</span>
+          </div>
+        </div>
+
+        <!-- Right Column: Product Image with Model on Clean Backdrop -->
+        <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 shadow-inner overflow-hidden">
+          <img 
+            src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=350&q=80" 
+            alt="مدل تیشرت مشکی سایز ایکس لارج"
+            class="w-full h-full object-cover object-top"
+            loading="lazy"
+          />
+        </div>
+      </div>
+
+      <!-- Extra Spacing for Floating PiP overlap -->
+      <div class="h-28"></div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- 7. Floating Video / Face Analysis Picture-in-Picture (PiP)     -->
+    <!-- ============================================================= -->
+    <div id="pipWidget" class="absolute left-4 bottom-24 z-40 w-[150px] sm:w-[158px] bg-[#232e3d] rounded-[22px] border border-[#34465e] shadow-[0_16px_36px_rgba(0,0,0,0.7)] overflow-hidden transition-all duration-300">
+      
+      <!-- Video / Portrait Canvas Area -->
+      <div class="relative w-full aspect-[4/5] bg-black overflow-hidden flex items-center justify-center">
+        
+        <!-- Fallback Portrait Image -->
+        <img 
+          id="pipPortraitImg"
+          src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80" 
+          alt="آنالیز چهره" 
+          class="w-full h-full object-cover select-none"
+        />
+
+        <!-- Live Camera Stream (Hidden by default, togglable) -->
+        <video id="pipCameraStream" autoplay playsinline muted class="hidden w-full h-full object-cover -scale-x-100"></video>
+
+        <!-- Dynamic Red Face Mesh SVG Overlay -->
+        <svg id="faceMeshSvg" class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 125" preserveAspectRatio="none">
+          <defs>
+            <filter id="meshGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="0.4" flood-color="#ef4444" flood-opacity="0.8"/>
+            </filter>
+          </defs>
+
+          <!-- Outer Jawline & Forehead Contour -->
+          <polygon points="50,18 64,22 75,32 78,45 74,62 67,78 57,92 50,96 43,92 33,78 26,62 22,45 25,32 36,22" 
+                   fill="none" stroke="#ef4444" stroke-width="0.75" stroke-opacity="0.85" filter="url(#meshGlow)"/>
+
+          <!-- Forehead and Brow Triangulations -->
+          <polyline points="36,22 50,30 64,22" fill="none" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.6"/>
+          <polyline points="25,32 38,34 50,30 62,34 75,32" fill="none" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.6"/>
+
+          <!-- Eyebrows -->
+          <path d="M 30,38 Q 38,34 46,39" fill="none" stroke="#ef4444" stroke-width="0.8" stroke-opacity="0.9"/>
+          <path d="M 54,39 Q 62,34 70,38" fill="none" stroke="#ef4444" stroke-width="0.8" stroke-opacity="0.9"/>
+
+          <!-- Eyes Wireframe -->
+          <polygon points="31,43 38,40 45,44 38,46" fill="none" stroke="#ef4444" stroke-width="0.65" stroke-opacity="0.8"/>
+          <polygon points="55,44 62,40 69,43 62,46" fill="none" stroke="#ef4444" stroke-width="0.65" stroke-opacity="0.8"/>
+
+          <!-- Nose Bridge & Base -->
+          <polygon points="50,32 46,55 54,55" fill="none" stroke="#ef4444" stroke-width="0.65" stroke-opacity="0.7"/>
+          <polygon points="43,60 50,56 57,60 50,64" fill="none" stroke="#ef4444" stroke-width="0.65" stroke-opacity="0.85"/>
+
+          <!-- Mouth & Lips Wireframe -->
+          <polygon points="38,72 50,69 62,72 50,78" fill="none" stroke="#ef4444" stroke-width="0.7" stroke-opacity="0.85"/>
+          <line x1="38" y1="72" x2="62" y2="72" stroke="#ef4444" stroke-width="0.6" stroke-opacity="0.9"/>
+          <polygon points="41,72 50,74 59,72 50,81" fill="none" stroke="#ef4444" stroke-width="0.6" stroke-opacity="0.7"/>
+
+          <!-- Cheekbone Connections -->
+          <line x1="26" y1="62" x2="43" y2="60" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.55"/>
+          <line x1="74" y1="62" x2="57" y2="60" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.55"/>
+          <line x1="43" y1="60" x2="38" y2="72" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.55"/>
+          <line x1="57" y1="60" x2="62" y2="72" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.55"/>
+          <line x1="50" y1="81" x2="50" y2="96" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.6"/>
+
+          <!-- Key Landmark Node Dots with Glow -->
+          <g fill="#ff4d4d">
+            <circle cx="50" cy="18" r="1.1"/>
+            <circle cx="50" cy="30" r="1.1"/>
+            <circle cx="38" cy="34" r="1"/>
+            <circle cx="62" cy="34" r="1"/>
+            <circle cx="38" cy="43" r="1.1"/>
+            <circle cx="62" cy="43" r="1.1"/>
+            <circle cx="50" cy="56" r="1.1"/>
+            <circle cx="43" cy="60" r="1"/>
+            <circle cx="57" cy="60" r="1"/>
+            <circle cx="50" cy="64" r="1.1"/>
+            <circle cx="38" cy="72" r="1.1"/>
+            <circle cx="62" cy="72" r="1.1"/>
+            <circle cx="50" cy="78" r="1.1"/>
+            <circle cx="50" cy="96" r="1.2"/>
+          </g>
+        </svg>
+
+        <!-- Toggle Real Webcam / Demo Button (Top Left corner) -->
+        <button 
+          id="toggleCamBtn"
+          title="فعالسازی/تغییر به دوربین واقعی" 
+          class="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-black/85 text-white/90 backdrop-blur-sm flex items-center justify-center transition-colors press-action"
+        >
+          <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <!-- Live Scan Scanning Line Animation -->
+        <div class="absolute inset-x-0 h-[2px] bg-red-500/70 shadow-[0_0_8px_#ef4444] animate-bounce pointer-events-none"></div>
+      </div>
+
+      <!-- Bottom Status Pill inside PiP: Smiley Icon + "خوشحال" -->
+      <div id="moodStatusBadge" class="w-full bg-[#1b2533] px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-[#202c3d] transition-colors border-t border-[#2e3e54]" title="کلیک برای تغییر مود">
+        <!-- Text on Right (RTL) -->
+        <span id="currentMoodText" class="text-xs font-bold text-gray-200">
+          خوشحال
+        </span>
+
+        <!-- Green Smiley Icon in circle -->
+        <div id="moodIconWrapper" class="w-6 h-6 rounded-lg bg-emerald-950/70 border border-emerald-600/40 flex items-center justify-center text-emerald-400">
+          <i data-lucide="smile" class="w-4 h-4 stroke-[2]"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 8. Fixed Bottom Bar: Microphone Action Button -->
+    <div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-[#121922] via-[#121922]/95 to-transparent pt-6 z-30">
+      <button 
+        id="micButton" 
+        class="w-full bg-[#e53945] hover:bg-[#d82d39] active:scale-[0.98] text-white py-3.5 px-5 rounded-[22px] flex items-center justify-between shadow-xl shadow-red-950/40 transition-all duration-200 animate-mic-glow press-action"
+      >
+        <!-- Persian Instruction Text -->
+        <span id="micStatusText" class="text-[13px] sm:text-[14px] font-bold text-white tracking-tight flex-1 text-center pr-2">
+          میکروفون فعال است (شروع به صحبت کنید...)
+        </span>
+
+        <!-- Microphone Icon with Audio Waves -->
+        <div class="relative flex items-center justify-center w-7 h-7 flex-shrink-0">
+          <i id="micIcon" data-lucide="mic" class="w-5 h-5 text-white stroke-[2.2]"></i>
+        </div>
+      </button>
+    </div>
+
+    <!-- Product Quick View Bottom Sheet (Modal) -->
+    <div id="productModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end justify-center transition-all">
+      <div class="w-full max-w-[430px] bg-[#16212e] border-t border-[#293a50] rounded-t-[28px] p-5 shadow-2xl flex flex-col text-right">
+        <div class="w-10 h-1 bg-gray-500 rounded-full mx-auto mb-3 cursor-pointer" onclick="closeProductModal()"></div>
+        
+        <div class="flex items-center justify-between mb-3 border-b border-gray-800 pb-3">
+          <span id="modalTitle" class="text-sm font-bold text-white">تیشرت مشکی</span>
+          <span id="modalPrice" class="text-xs font-bold text-red-400">از ۲۵۷,۰۰۰ تومان</span>
+        </div>
+
+        <p class="text-xs text-gray-300 leading-relaxed mb-4">
+          این کالا توسط ۱۷ فروشگاه معتبر در ترب عرضه می‌شود. جهت مشاهده مقایسه قیمتی و شرایط ارسال فوری روی دکمه زیر کلیک کنید.
+        </p>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="confirmRedirect()" class="bg-[#e53945] hover:bg-[#d42d39] active:scale-95 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-red-950/40">
+            <span>مشاهده فروشگاه‌ها</span>
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="closeProductModal()" class="bg-[#222d3b] hover:bg-[#2c394a] text-gray-300 font-medium py-2.5 rounded-xl text-xs transition-all">
+            بستن
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#1b2635]/95 border border-[#32455c] text-white text-xs px-4 py-2.5 rounded-2xl shadow-2xl z-50 flex items-center gap-2 whitespace-nowrap">
+      <i id="toastIcon" data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+      <span id="toastText">پیام</span>
+    </div>
+
+  </main>
+
+  <script>
+    // Initialize Lucide vector icons
+    lucide.createIcons();
+
+    // DOM References
+    const micButton = document.getElementById('micButton');
+    const micStatusText = document.getElementById('micStatusText');
+    const micIcon = document.getElementById('micIcon');
+    const moodStatusBadge = document.getElementById('moodStatusBadge');
+    const currentMoodText = document.getElementById('currentMoodText');
+    const moodIconWrapper = document.getElementById('moodIconWrapper');
+    const toggleCamBtn = document.getElementById('toggleCamBtn');
+    const pipPortraitImg = document.getElementById('pipPortraitImg');
+    const pipCameraStream = document.getElementById('pipCameraStream');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    const toastIcon = document.getElementById('toastIcon');
+    const productModal = document.getElementById('productModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalPrice = document.getElementById('modalPrice');
+
+    let isMicActive = true;
+    let isCameraLive = false;
+    let cameraStreamObj = null;
+
+    // Available moods cycle
+    const moods = [
+      { name: 'خوشحال', icon: 'smile', color: 'emerald' },
+      { name: 'متمرکز', icon: 'sparkles', color: 'cyan' },
+      { name: 'تردید', icon: 'help-circle', color: 'amber' },
+      { name: 'آرام', icon: 'check-circle-2', color: 'sky' }
+    ];
+    let currentMoodIdx = 0;
+
+    // Toast Utility
+    let toastTimeout;
+    function showToast(text, isError = false) {
+      toastText.textContent = text;
+      toastIcon.setAttribute('data-lucide', isError ? 'alert-circle' : 'check-circle');
+      toastIcon.className = `w-4 h-4 ${isError ? 'text-red-400' : 'text-emerald-400'}`;
+      toast.classList.remove('hidden');
+      lucide.createIcons();
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2300);
+    }
+
+    // Toggle Microphone state
+    micButton.addEventListener('click', () => {
+      isMicActive = !isMicActive;
+      if (isMicActive) {
+        micStatusText.textContent = 'میکروفون فعال است (شروع به صحبت کنید...)';
+        micButton.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+        micButton.classList.add('bg-[#e53945]', 'hover:bg-[#d82d39]', 'animate-mic-glow');
+        showToast('میکروفون فعال شد؛ در حال شنیدن...');
+      } else {
+        micStatusText.textContent = 'میکروفون متوقف شد (برای صحبت لمس کنید)';
+        micButton.classList.remove('bg-[#e53945]', 'hover:bg-[#d82d39]', 'animate-mic-glow');
+        micButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
+        showToast('میکروفون متوقف گردید', true);
+      }
+    });
+
+    // Toggle Mood on PiP card click
+    moodStatusBadge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentMoodIdx = (currentMoodIdx + 1) % moods.length;
+      const m = moods[currentMoodIdx];
+      currentMoodText.textContent = m.name;
+      moodIconWrapper.innerHTML = `<i data-lucide="${m.icon}" class="w-4 h-4 stroke-[2]"></i>`;
+      lucide.createIcons();
+      showToast(`وضعیت احساسی به «${m.name}» به‌روز شد`);
+    });
+
+    // Toggle Real Webcam in PiP
+    toggleCamBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!isCameraLive) {
+        try {
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            cameraStreamObj = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 640 } },
+              audio: false
+            });
+            pipCameraStream.srcObject = cameraStreamObj;
+            pipCameraStream.classList.remove('hidden');
+            pipPortraitImg.classList.add('hidden');
+            isCameraLive = true;
+            showToast('دوربین زنده فعال شد');
+          } else {
+            showToast('دسترسی به دوربین در این دستگاه مقدور نیست', true);
+          }
+        } catch (err) {
+          showToast('اجازه دسترسی به دوربین داده نشد', true);
+        }
+      } else {
+        if (cameraStreamObj) {
+          cameraStreamObj.getTracks().forEach(t => t.stop());
+        }
+        pipCameraStream.classList.add('hidden');
+        pipPortraitImg.classList.remove('hidden');
+        isCameraLive = false;
+        showToast('حالت شبیه‌ساز پرتره فعال شد');
+      }
+    });
+
+    // Product Modal Details
+    function openProductDetail(title, price) {
+      modalTitle.textContent = title;
+      modalPrice.textContent = price;
+      productModal.classList.remove('hidden');
+    }
+
+    function closeProductModal() {
+      productModal.classList.add('hidden');
+    }
+
+    productModal.addEventListener('click', (e) => {
+      if (e.target === productModal) closeProductModal();
+    });
+
+    function confirmRedirect() {
+      closeProductModal();
+      showToast('در حال انتقال به صفحه مقایسه قیمت فروشگاه‌ها...');
+    }
+  </script>
+</body>
+</html>

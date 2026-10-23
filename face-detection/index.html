@@ -2,107 +2,421 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>دستیار هوشمند خرید ترب | تشخیص چهره و گفتار به متن</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ترب‌یار - دستیار هوشمند و بصری خرید ترب</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Vazirmatn -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #0b0f14;
+      color: #f1f5f9;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+
+    .press-action {
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .press-action:active {
+      transform: scale(0.96);
+    }
+
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
+    }
+    .animate-pulse-subtle { animation: subtlePulse 2s infinite ease-in-out; }
+
+    @keyframes micGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(229, 57, 69, 0.4); }
+      50% { box-shadow: 0 0 28px rgba(229, 57, 69, 0.75); }
+    }
+    .animate-mic-glow { animation: micGlow 2.4s infinite ease-in-out; }
+
+    @keyframes scanSweep {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(220px); }
+    }
+    .animate-scan { animation: scanSweep 2.5s ease-in-out infinite; }
+
+    /* Equalizer wave animation */
+    @keyframes eqBar1 { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+    @keyframes eqBar2 { 0%, 100% { height: 16px; } 50% { height: 6px; } }
+    @keyframes eqBar3 { 0%, 100% { height: 8px; } 50% { height: 20px; } }
+    .eq-bar-1 { animation: eqBar1 0.75s ease-in-out infinite; }
+    .eq-bar-2 { animation: eqBar2 0.65s ease-in-out infinite 0.15s; }
+    .eq-bar-3 { animation: eqBar3 0.85s ease-in-out infinite 0.3s; }
+
+    /* Custom Checkbox */
+    .custom-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      border-radius: 0.35rem;
+      background-color: transparent;
+      cursor: pointer;
+      display: inline-grid;
+      place-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .custom-checkbox:checked {
+      background-color: #ffffff;
+      border-color: #ffffff;
+    }
+    .custom-checkbox::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+      transform: scale(0);
+      background-color: #1a222d;
+      transition: 120ms transform ease-in-out;
+    }
+    .custom-checkbox:checked::before { transform: scale(1); }
+
+    /* Viewfinder Brackets */
+    .viewfinder-bracket {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: #ef4444;
+      pointer-events: none;
+      z-index: 15;
+    }
+    .bracket-tl { top: 8px; left: 8px; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 6px; }
+    .bracket-tr { top: 8px; right: 8px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 6px; }
+    .bracket-bl { bottom: 8px; left: 8px; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 6px; }
+    .bracket-br { bottom: 8px; right: 8px; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 6px; }
+  </style>
 </head>
-<body>
-  <div class="container">
-    <h1>دستیار صوتی و بصری ترب</h1>
-    <div id="loadingIndicator">در حال بارگذاری مدل‌های هوش مصنوعی...</div>
-    <div id="warningMessage" class="hidden">⚠️ دسترسی به وب‌کم مقدور نیست. لطفاً اجازه دسترسی را تایید کنید.</div>
+<body class="min-h-screen flex items-center justify-center p-0 sm:py-4 sm:px-4">
 
-    <div class="media-wrapper">
-      <video id="video" autoplay muted class="hidden"></video>
-      <canvas id="canvas" class="hidden"></canvas>
+  <!-- Mobile Shell Device Container -->
+  <main class="w-full max-w-[430px] min-h-[100dvh] sm:min-h-0 sm:h-[900px] bg-[#121922] sm:rounded-[36px] sm:border sm:border-[#222e40] sm:shadow-[0_25px_65px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden relative">
+
+    <!-- Top Sub-Header: Branding & Assistant Identity -->
+    <header class="w-full px-4 pt-3.5 pb-2.5 flex items-center justify-between border-b border-white/[0.05] bg-[#121922]/95 backdrop-blur-md z-30">
+      <div class="flex items-center gap-2">
+        <button id="privacyPopupBtn" title="تنظیمات حریم خصوصی و دوربین" class="w-8 h-8 rounded-full bg-[#1b2535] hover:bg-[#253347] flex items-center justify-center text-gray-300 transition-colors press-action border border-[#2b394d]">
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+        <button id="toggleManageBtn" title="مدیریت چهره‌ها" class="w-8 h-8 rounded-full bg-[#1b2535] hover:bg-[#253347] flex items-center justify-center text-gray-300 transition-colors press-action border border-[#2b394d]">
+          <i data-lucide="users" class="w-4 h-4 text-sky-400"></i>
+        </button>
+        <button id="toggleTtsMuteBtn" title="قطع / وصل خواندن صوتی" class="w-8 h-8 rounded-full bg-[#1b2535] hover:bg-[#253347] flex items-center justify-center text-gray-300 transition-colors press-action border border-[#2b394d]">
+          <i id="ttsMuteIcon" data-lucide="volume-2" class="w-4 h-4 text-gray-300"></i>
+        </button>
+      </div>
+
+      <!-- Torob Yar Identity -->
+      <div class="flex items-center gap-2.5">
+        <div class="flex flex-col items-end text-right">
+          <span class="text-base font-black text-white leading-tight">ترب‌یار</span>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-subtle"></span>
+            <span id="headerStatusText" class="text-[11px] text-emerald-400 font-medium">آنلاین و آماده گفتگو</span>
+          </div>
+        </div>
+        <div class="relative flex-shrink-0">
+          <div class="w-10 h-10 rounded-full bg-[#e83e58] flex items-center justify-center shadow-lg shadow-red-950/40">
+            <i data-lucide="bot" class="w-5 h-5 text-white stroke-[2.2]"></i>
+          </div>
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#121922] rounded-full"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable Chat Stream Container -->
+    <div id="chatFeed" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-28 relative">
+
+      <!-- Welcome Assistant Message -->
+      <div class="flex justify-end">
+        <div class="bg-[#1b2535] text-gray-100 text-[13.5px] leading-relaxed font-normal p-4 rounded-2xl max-w-[85%] text-right border border-[#243346] shadow-sm">
+          سلام! من <strong>ترب‌یار</strong> هستم؛ دستیار هوشمند و صوتی خرید شما در ترب. هر کالایی که مد نظرتونه رو می‌تونید به صورت صوتی یا متنی بپرسید!
+        </div>
+      </div>
+
+      <!-- Identity & Demographics Pill inside Chat Stream -->
+      <div class="flex justify-center">
+        <div class="bg-[#172230]/90 border border-[#263447] text-gray-300 text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 shadow-sm">
+          <span id="chatIdentityBadge" class="text-emerald-400 font-semibold flex items-center gap-1">
+            <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+            <span id="detectedUserLabel">در حال شناسایی کاربر...</span>
+          </span>
+          <span class="text-gray-600">|</span>
+          <span id="chatDemographicsLabel" class="text-gray-300">چهره و حالات در حال تحلیل</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Messages Will Append Here -->
+
+      <!-- Extra Spacing for Floating PiP overlap -->
+      <div></div>
     </div>
 
-    <div id="emotionResult">در حال شناسایی چهره...</div>
+    <!-- ============================================================= -->
+    <!-- Floating Video / Face Analysis Picture-in-Picture (PiP)       -->
+    <!-- ============================================================= -->
+    <div id="pipWidget" class="absolute left-4 bottom-24 z-40 w-[150px] sm:w-[158px] bg-[#1a2432] rounded-[22px] border border-[#2c3d52] shadow-[0_16px_36px_rgba(0,0,0,0.7)] overflow-hidden transition-all duration-300">
 
-    <!-- Face Identity Detection & Management Section -->
-    <div class="identity-section">
-      <div class="identity-header">
-        <div class="identity-current">
-          <span class="identity-title">هویت شخص در کادر:</span>
-          <span id="currentIdentityBadge" class="identity-badge unknown">در حال بررسی...</span>
+      <!-- Video / Portrait Canvas Area -->
+      <div class="relative w-full aspect-[4/4.8] bg-black overflow-hidden flex items-center justify-center">
+
+        <!-- Live Real Webcam Video -->
+        <video id="video" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover -scale-x-100 hidden"></video>
+
+        <!-- Canvas for Face Landmarks & Boxes (from face-api.js) -->
+        <canvas id="canvas" class="absolute inset-0 w-full h-full object-cover -scale-x-100 hidden z-10 pointer-events-none"></canvas>
+
+        <!-- Fallback Portrait Image -->
+        <img
+          id="pipPortraitImg"
+          src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80"
+          alt="آنالیز چهره"
+          class="w-full h-full object-cover select-none"
+        />
+
+        <!-- Red Viewfinder Corner Brackets -->
+        <div class="viewfinder-bracket bracket-tl"></div>
+        <div class="viewfinder-bracket bracket-tr"></div>
+        <div class="viewfinder-bracket bracket-bl"></div>
+        <div class="viewfinder-bracket bracket-br"></div>
+
+        <!-- Laser Scan Effect Bar -->
+        <div class="animate-scan absolute inset-x-0 h-12 bg-gradient-to-b from-transparent via-red-500/25 to-transparent pointer-events-none z-10"></div>
+
+        <!-- Toggle Real Webcam / Fallback Button (Top Left corner) -->
+        <button
+          id="toggleCamBtn"
+          title="فعالسازی/تغییر به دوربین واقعی"
+          class="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/85 text-white/90 backdrop-blur-sm flex items-center justify-center transition-colors press-action z-20"
+        >
+          <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <!-- Quick Register Identity Icon (Top Right corner) -->
+        <button
+          id="quickRegisterBtn"
+          title="ثبت چهره در حافظه"
+          class="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/85 text-emerald-400 backdrop-blur-sm flex items-center justify-center transition-colors press-action z-20"
+        >
+          <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Bottom Status Pill inside PiP: Smiley Icon + Mood -->
+      <div id="moodStatusBadge" class="w-full bg-[#16202c] px-2.5 py-1.5 flex items-center justify-between border-t border-[#253547]">
+        <!-- Right side (RTL): Mood Text -->
+        <div class="flex flex-col text-right">
+          <span id="currentMoodText" class="text-[11.5px] font-bold text-gray-200">عادی / آرام</span>
+          <span id="currentAgeGenderText" class="text-[9.5px] text-gray-400">آقا • ۲۸ سال</span>
         </div>
-        <div class="auto-assign-toggle">
-          <label title="اختصاص خودکار شناسه به افراد جدید پس از ۲ ثانیه قرار گرفتن روبروی دوربین">
-            <input type="checkbox" id="autoAssignCheckbox" checked>
-            <span>ثبت خودکار افراد جدید با شناسه جدید</span>
+
+        <!-- Left side (RTL): Mood Icon -->
+        <div id="moodIconWrapper" class="w-6 h-6 rounded-lg bg-emerald-950/70 border border-emerald-600/40 flex items-center justify-center text-emerald-400">
+          <i data-lucide="smile" class="w-3.5 h-3.5 stroke-[2]"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fixed Bottom Bar: Microphone Action Button & Text Box -->
+    <div class="absolute bottom-0 inset-x-0 p-3.5 bg-gradient-to-t from-[#121922] via-[#121922]/95 to-transparent pt-6 z-30">
+
+      <!-- Collapsible Text Input Row -->
+      <div class="flex items-center gap-2 mb-2">
+        <input
+          type="text"
+          id="promptInput"
+          placeholder="متن پیام صوتی یا دستی خود را اینجا بنویسید..."
+          class="flex-1 bg-[#182330] border border-[#263548] text-white text-xs px-3.5 py-2.5 rounded-xl outline-none focus:border-[#e53945] transition-all"
+        />
+        <button
+          id="sendBtn"
+          title="ارسال پیام"
+          class="bg-[#e53945] hover:bg-[#d82d39] text-white p-2.5 rounded-xl flex items-center justify-center press-action shadow-md shadow-red-950/30"
+        >
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Big Microphone Record Button -->
+      <button
+        id="micButton"
+        class="w-full bg-[#e53945] hover:bg-[#d82d39] active:scale-[0.98] text-white py-3.5 px-4 rounded-[22px] flex items-center justify-between shadow-xl shadow-red-950/40 transition-all duration-200 animate-mic-glow press-action"
+      >
+        <!-- Equalizer lines on active speech -->
+        <div class="flex items-center gap-[3px] h-5 px-1">
+          <span class="w-[3px] bg-white rounded-full eq-bar-1"></span>
+          <span class="w-[3px] bg-white rounded-full eq-bar-2"></span>
+          <span class="w-[3px] bg-white rounded-full eq-bar-3"></span>
+        </div>
+
+        <!-- Persian Instruction Text -->
+        <span id="micStatusText" class="text-[13px] font-bold text-white tracking-tight flex-1 text-center pr-2">
+          برای صحبت لمس کنید (یا کلید Enter)
+        </span>
+
+        <!-- Microphone Icon -->
+        <div class="relative flex items-center justify-center w-7 h-7 flex-shrink-0">
+          <i id="micIcon" data-lucide="mic" class="w-5 h-5 text-white stroke-[2.2]"></i>
+        </div>
+      </button>
+
+      <!-- Hidden select for voice lang compatibility -->
+      <select id="langSelect" class="hidden">
+        <option value="fa-IR" selected>فارسی (ایران)</option>
+        <option value="en-US">English (US)</option>
+      </select>
+      <select id="ttsVoiceSelect" class="hidden"></select>
+      <input type="checkbox" id="autoTtsCheckbox" checked class="hidden" />
+    </div>
+
+    <!-- Product Detail Bottom Sheet (Design from 3.html) -->
+    <div id="productDetailModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end justify-center transition-all">
+      <div class="w-full max-w-[430px] max-h-[88vh] overflow-y-auto bg-[#141d27] border-t border-[#293a50] rounded-t-[30px] p-4 text-right shadow-2xl flex flex-col space-y-4">
+
+        <!-- Drag Handle -->
+        <div class="w-10 h-1 bg-gray-500 rounded-full mx-auto cursor-pointer" onclick="closeProductDetailModal()"></div>
+
+        <!-- Header Row -->
+        <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+          <button onclick="closeProductDetailModal()" class="w-8 h-8 rounded-full bg-[#1b2535] hover:bg-[#253347] flex items-center justify-center text-gray-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+          <div class="text-xs font-semibold text-gray-300">مشخصات و فروشگاه‌های ترب</div>
+          <button id="modalWishlistBtn" class="w-8 h-8 rounded-full bg-[#1b2535] flex items-center justify-center text-gray-400">
+            <i data-lucide="heart" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Product Image & Title -->
+        <div class="w-full bg-[#192330] rounded-2xl p-3 flex flex-col items-center">
+          <div class="w-full h-44 rounded-xl bg-white flex items-center justify-center p-2 overflow-hidden shadow-inner">
+            <img id="detailModalImg" src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=85" alt="محصول" class="w-full h-full object-contain" />
+          </div>
+          <div class="w-full mt-3 text-right">
+            <h2 id="detailModalTitle" class="text-base font-bold text-white leading-snug">نام محصول</h2>
+            <div class="flex items-baseline justify-start gap-2 mt-1">
+              <span id="detailModalPrice" class="text-sm font-black text-[#eb445a]">قیمت در ترب</span>
+              <span id="detailModalSellersCount" class="text-xs text-gray-400">فروشگاه‌های معتبر ترب</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Material & Spec Pills -->
+        <div class="space-y-1.5" id="detailModalSpecsContainer">
+          <div class="text-xs text-gray-300 font-medium">مشخصات سریع:</div>
+          <div class="flex items-center gap-2 flex-wrap" id="detailModalSpecsList">
+            <span class="bg-[#212c3b] text-gray-200 text-xs px-3 py-1 rounded-lg">گارانتی اصالت کالا</span>
+            <span class="bg-[#e53945] text-white text-xs font-bold px-3 py-1 rounded-lg">ارسال فوری</span>
+            <span class="bg-[#212c3b] text-gray-200 text-xs px-3 py-1 rounded-lg">۷ روز ضمانت بازگشت</span>
+          </div>
+        </div>
+
+        <!-- Stores / Sellers List -->
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-gray-200">فروشگاه‌های همکار</span>
+            <span class="text-gray-400 text-[11px]">مرتب‌سازی: ارزان‌ترین</span>
+          </div>
+          <div class="space-y-2" id="detailModalSellersList">
+            <!-- Dynamically populated or standard template -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy & Camera Popup Modal (Design from popup.html) -->
+    <div id="privacyModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="w-full max-w-[390px] bg-[#1a222d] border border-[#2b3748] rounded-[28px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.65)] text-right flex flex-col relative">
+        <div class="flex items-center justify-between mb-3">
+          <button id="closePrivacyBtn" class="w-8 h-8 rounded-xl bg-[#232d3c] text-gray-400 hover:text-white flex items-center justify-center border border-[#303d50]">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+          <h2 class="text-base font-bold text-white">تنظیمات دوربین و حریم خصوصی</h2>
+        </div>
+        <div class="text-xs text-gray-300 leading-relaxed mb-4 text-justify">
+          برای تجربه‌ی شخصی‌سازی هوشمند ترب، تصویر زنده چهره شما به صورت کلاینت‌ساید (روی دستگاه خودتان) پردازش شده و برای استخراج استایل به مدل هوش مصنوعی ارسال می‌شود. داده‌ها نزد شما محفوظ است.
+        </div>
+        <label class="bg-[#121923] border border-[#263344] rounded-2xl p-3.5 mb-4 flex items-start gap-3 cursor-pointer">
+          <span class="text-xs text-gray-200 leading-relaxed flex-1">
+            با فعال بودن دوربین و پردازش ویژگی‌های پوشش و چهره برای ارائه بهترین پیشنهاد خرید موافقم.
+          </span>
+          <input type="checkbox" id="consentCheckbox" checked class="custom-checkbox mt-0.5">
+        </label>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button id="voiceOnlyBtn" class="bg-[#242f3e] hover:bg-[#2d3a4d] text-gray-200 font-semibold py-2.5 rounded-xl border border-[#344458] text-xs">
+            ادامه با دستیار صوتی
+          </button>
+          <button id="confirmCameraConsentBtn" class="bg-[#e53945] hover:bg-[#d42c38] text-white font-semibold py-2.5 rounded-xl text-xs shadow-lg shadow-red-900/30">
+            تایید و فعال‌سازی
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manage Stored Identities Modal -->
+    <div id="identitiesModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="w-full max-w-[390px] bg-[#1a222d] border border-[#2b3748] rounded-[28px] p-5 shadow-2xl text-right flex flex-col space-y-3">
+        <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+          <button id="closeIdentitiesBtn" class="w-8 h-8 rounded-xl bg-[#232d3c] text-gray-400 hover:text-white flex items-center justify-center">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+          <h3 class="text-sm font-bold text-white">مدیریت چهره‌های ذخیره شده (<span id="storedCount">۰</span>)</h3>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-gray-400">
+          <span>ذخیره در مرورگر (Client-Side)</span>
+          <button id="clearAllIdentitiesBtn" class="text-red-400 hover:text-red-300 text-xs">پاک‌سازی همه</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="text" id="manualNameInput" placeholder="نام چهره جدید (مثلاً: علی)" class="flex-1 bg-[#121822] border border-[#2d3a4d] rounded-xl px-3 py-2 text-xs text-white outline-none" />
+          <button id="registerFaceBtn" class="bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-bold px-3 py-2 rounded-xl">
+            ➕ ثبت
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-1">
+          <label class="flex items-center gap-1.5 cursor-pointer text-gray-300">
+            <input type="checkbox" id="autoAssignCheckbox" checked class="custom-checkbox">
+            <span>ثبت خودکار افراد جدید</span>
           </label>
         </div>
-      </div>
 
-      <div class="identity-controls">
-        <input type="text" id="manualNameInput" placeholder="نام یا شناسه سفارشی (پیش‌فرض: کاربر ۱، ۲...)" />
-        <button id="registerFaceBtn" class="btn-identity" title="ثبت چهره فعلی یا افزودن نمونه جدید برای ارتقای دقت">
-          ➕ ثبت / به‌روزرسانی چهره
-        </button>
-        <button id="toggleManageBtn" class="btn-secondary">
-          👥 مدیریت چهره‌ها (<span id="storedCount">۰</span>)
-        </button>
-      </div>
-
-      <!-- Manage Stored Identities Drawer -->
-      <div id="manageIdentitiesDrawer" class="identities-drawer hidden">
-        <div class="drawer-header">
-          <span>چهره‌های ذخیره شده در مرورگر (Client-side):</span>
-          <button id="clearAllIdentitiesBtn" class="btn-danger-text">پاک‌سازی همه</button>
-        </div>
-        <div id="identitiesList" class="identities-chips-list">
-          <span class="empty-note">هنوز هیچ چهره‌ای ذخیره نشده است.</span>
+        <div id="identitiesList" class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1">
+          <span class="text-xs text-gray-500">هیچ چهره‌ای هنوز ذخیره نشده است.</span>
         </div>
       </div>
     </div>
 
-    <!-- Speech To Text Section -->
-    <div class="speech-section">
-      <div class="mic-controls">
-        <button id="micBtn" class="mic-button" title="کلیک کنید تا صحبت کنید">
-          <span class="mic-icon">🎙️</span>
-          <span id="micStatusText">شروع صحبت با میکروفون</span>
-        </button>
-        <select id="langSelect" class="lang-select">
-          <option value="fa-IR" selected>فارسی (ایران)</option>
-          <option value="en-US">English (US)</option>
-        </select>
-      </div>
-
-      <div class="speech-box">
-        <textarea id="promptInput" rows="3" placeholder="متن حاصل از صدای شما اینجا قرار می‌گیرد یا می‌توانید دستی تایپ کنید..."></textarea>
-        <button id="sendBtn" class="send-button">ارسال به دستیار ترب 🚀</button>
-      </div>
+    <!-- Notification Toast Message -->
+    <div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#1b2635]/95 border border-[#32455c] text-white text-xs px-4 py-2.5 rounded-2xl shadow-2xl z-50 flex items-center gap-2 whitespace-nowrap">
+      <i id="toastIcon" data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+      <span id="toastText">پیام</span>
     </div>
 
-    <!-- Assistant Chat Result Section -->
-    <div id="assistantSection" class="assistant-section hidden">
-      <div class="assistant-header-row">
-        <div class="section-title">پاسخ دستیار خرید:</div>
-        <div class="tts-actions">
-          <select id="ttsVoiceSelect" class="tts-voice-select" title="انتخاب صدای دستگاه برای خواندن">
-            <option value="">در حال بارگذاری صداها...</option>
-          </select>
-          <label class="tts-toggle" title="خواندن خودکار پاسخ با صدا">
-            <input type="checkbox" id="autoTtsCheckbox" checked>
-            <span>🔊 خواندن صوتی</span>
-          </label>
-          <button id="ttsSpeakBtn" class="tts-btn" title="پخش مجدد صدای پاسخ">🔊 پخش مجدد</button>
-          <button id="ttsStopBtn" class="tts-btn tts-btn-stop" title="توقف پخش صدا">⏹ توقف</button>
-        </div>
-      </div>
-      <div id="assistantReply" class="assistant-reply"></div>
-      <div id="ttsStatus" class="tts-status"></div>
+  </main>
 
-      <div id="profileSourceBadge" class="cache-badge hidden"></div>
-      <div id="intentBadge" class="intent-badge hidden"></div>
-
-      <div id="crossSellBox" class="cross-sell-box hidden"></div>
-
-      <div id="productsGrid" class="products-grid"></div>
-    </div>
-  </div>
-
+  <!-- Required face-api.js and updated unified script -->
   <script defer src="face-api.min.js"></script>
   <script defer src="script.js"></script>
 </body>

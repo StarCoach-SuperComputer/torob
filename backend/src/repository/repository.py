@@ -39,6 +39,111 @@ class Repository:
             "offers_count": len(offers),
         }
 
+    def get_product_details_dict(self, product_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Returns a JSON-serializable dictionary combining product, real shops from Shops,
+        and real offers from Offers.
+        """
+        product = self.products.get_by_id(product_id)
+        offers = self.offers.get_by_product_id(product_id)
+        cheapest_offer = self.offers.get_cheapest_for_product(product_id)
+
+        if not product and not offers:
+            return None
+
+        # Build shops list with joined Shop details
+        shops_list = []
+        for offer in offers:
+            shop = self.shops.get_by_id(offer.shop_id)
+            shop_name = shop.name if shop else (offer.seller_title or "فروشگاه همکار ترب")
+            city = ""
+            if shop and shop.location_label:
+                city = shop.location_label
+            elif shop and shop.address:
+                city = shop.address[:40]
+            else:
+                city = "تهران"
+
+            shops_list.append({
+                "offer_id": offer.offer_id,
+                "shop_id": offer.shop_id,
+                "shop_name": shop_name,
+                "price": offer.price_toman,
+                "price_formatted": f"{offer.price_toman:,} تومان" if offer.price_toman > 0 else "استعلام قیمت",
+                "city": city,
+                "address": shop.address if shop else None,
+                "warranty": offer.warranty or "گارانتی اصالت و سلامت فیزیکی کالا",
+                "supports_fast_delivery": bool(shop.supports_fast_delivery) if shop else False,
+                "website_url": shop.website_url if shop else None,
+                "instagram": shop.instagram if shop else None,
+                "seller_title": offer.seller_title,
+                "description": offer.description,
+            })
+
+        # Sort shops by price (cheapest first)
+        shops_list.sort(key=lambda s: s["price"] if s["price"] > 0 else float("inf"))
+
+        # Fallback if product has no direct offers in offers.csv:
+        # Match real shops from Shops by category or catalog
+        if not shops_list:
+            cat_name = product.category_name if product else None
+            cat_shops = self.shops.get_by_category(cat_name) if cat_name else []
+            if not cat_shops:
+                cat_shops = self.shops.all()[:5]
+
+            for s in cat_shops[:5]:
+                city = s.location_label or (s.address[:35] if s.address else "تهران، ارسال فوری")
+                shops_list.append({
+                    "offer_id": f"offer_{s.shop_id}",
+                    "shop_id": s.shop_id,
+                    "shop_name": s.name,
+                    "price": 0,
+                    "price_formatted": "استعلام قیمت روز",
+                    "city": city,
+                    "address": s.address,
+                    "warranty": "ضمانت ۷ روز بازگشت وجه ترب",
+                    "supports_fast_delivery": bool(s.supports_fast_delivery),
+                    "website_url": s.website_url,
+                    "instagram": s.instagram,
+                    "seller_title": s.name,
+                    "description": None,
+                })
+
+        # Calculate lowest price
+        min_price = None
+        if cheapest_offer and cheapest_offer.price_toman > 0:
+            min_price = cheapest_offer.price_toman
+        elif shops_list and shops_list[0]["price"] > 0:
+            min_price = shops_list[0]["price"]
+
+        min_price_str = f"از {min_price:,} تومان" if min_price else "استعلام در فروشگاه‌ها"
+
+        # Image URL
+        image_urls = product.image_urls if product else []
+        primary_image = image_urls[0] if image_urls else None
+
+        # Specs
+        specs_list = []
+        if product and product.specs:
+            specs_list = [{"key": s.key, "value": s.value, "section": s.section} for s in product.specs]
+
+        title = product.persian_title if product else (offers[0].seller_title if offers else "محصول ترب")
+
+        return {
+            "product_id": product_id,
+            "persian_title": title,
+            "brand_name": product.brand_name if product else None,
+            "category_name": product.category_name if product else None,
+            "model": product.model if product else None,
+            "image_urls": image_urls,
+            "primary_image": primary_image,
+            "specs": specs_list,
+            "min_price": min_price,
+            "min_price_formatted": min_price_str,
+            "offers_count": len(shops_list),
+            "shops": shops_list,
+        }
+
     def get_shop_details(self, shop_id: str) -> Optional[Dict[str, Any]]:
         """
         Combines shop info with all its active offers and products.

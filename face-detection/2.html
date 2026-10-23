@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ترب‌یار - تحلیل چهره و احساسات</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vazirmatn Persian Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #121820;
+      color: #f1f5f9;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* Red corner viewfinder brackets */
+    .viewfinder-bracket {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      border-color: #ef4444;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .bracket-tl {
+      top: 14px;
+      left: 14px;
+      border-top-width: 3.5px;
+      border-left-width: 3.5px;
+      border-top-left-radius: 9px;
+    }
+    .bracket-tr {
+      top: 14px;
+      right: 14px;
+      border-top-width: 3.5px;
+      border-right-width: 3.5px;
+      border-top-right-radius: 9px;
+    }
+    .bracket-bl {
+      bottom: 14px;
+      left: 14px;
+      border-bottom-width: 3.5px;
+      border-left-width: 3.5px;
+      border-bottom-left-radius: 9px;
+    }
+    .bracket-br {
+      bottom: 14px;
+      right: 14px;
+      border-bottom-width: 3.5px;
+      border-right-width: 3.5px;
+      border-bottom-right-radius: 9px;
+    }
+
+    /* Subtle press scale effect */
+    .press-effect:active {
+      transform: scale(0.97);
+    }
+
+    /* Pulse for mesh dots */
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+    .pulse-node {
+      animation: subtlePulse 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#111720] flex items-center justify-center p-3 sm:p-5">
+
+  <!-- Mobile Frame Container (Matching Screenshot Proportions) -->
+  <main class="w-full max-w-[390px] min-h-[720px] flex flex-col justify-between items-center py-6 px-4 relative">
+
+    <!-- Top App Title -->
+    <header class="w-full text-center pt-2 pb-4">
+      <h1 class="text-xl font-bold tracking-tight text-white drop-shadow-sm">
+        ترب‌یار
+      </h1>
+    </header>
+
+    <!-- Center Card & Controls Container -->
+    <div class="w-full flex flex-col space-y-4">
+
+      <!-- Main Surface Card containing the Viewfinder & Info Rows -->
+      <section class="w-full bg-[#161f2a] border border-[#212c3b] rounded-[26px] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.5)] flex flex-col space-y-3">
+        
+        <!-- Camera Viewfinder Viewport -->
+        <div class="relative w-full aspect-[4/3] rounded-[20px] overflow-hidden bg-[#0d131a] flex items-center justify-center border border-[#243042]">
+          
+          <!-- Fallback Image / Video Element -->
+          <img 
+            id="portraitImg"
+            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" 
+            alt="تصویر کاربر" 
+            class="w-full h-full object-cover filter brightness-[0.92] contrast-[1.02]"
+            crossorigin="anonymous"
+          />
+
+          <!-- Live Webcam Feed (hidden by default, togglable) -->
+          <video 
+            id="cameraFeed" 
+            autoplay 
+            playsinline 
+            muted 
+            class="hidden w-full h-full object-cover scale-x-[-1]"
+          ></video>
+
+          <!-- SVG Face Landmark Mesh (Procedurally rendered to align with portrait) -->
+          <svg id="faceMeshSvg" class="absolute inset-0 w-full h-full pointer-events-none z-[5]" viewBox="0 0 400 300" preserveAspectRatio="none">
+            <g id="meshWires" stroke="#ef4444" stroke-width="0.85" opacity="0.45" stroke-dasharray="none"></g>
+            <g id="meshPoints" fill="#ef4444"></g>
+          </svg>
+
+          <!-- 4 Red Corner Viewfinder Brackets -->
+          <div class="viewfinder-bracket bracket-tl"></div>
+          <div class="viewfinder-bracket bracket-tr"></div>
+          <div class="viewfinder-bracket bracket-bl"></div>
+          <div class="viewfinder-bracket bracket-br"></div>
+
+          <!-- Camera Switch Toggle Button (Top-Right Floating Overlay) -->
+          <button 
+            id="toggleCamBtn" 
+            title="تغییر به دوربین زنده"
+            class="absolute top-3 left-3 z-20 bg-black/55 hover:bg-black/75 backdrop-blur-md text-white/90 p-2 rounded-xl border border-white/10 transition-all press-effect"
+          >
+            <i data-lucide="camera" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- User Information Row (Gender, Age, and Edit Button) -->
+        <div class="w-full flex items-center justify-between px-3 pt-1">
+          <!-- Right side in RTL: Icon + User demographic details -->
+          <div class="flex items-center gap-2 text-slate-100 font-semibold text-[15px]">
+            <i data-lucide="user" class="w-5 h-5 text-[#ef4444] stroke-[2.2]"></i>
+            <span id="userDemographics">آقا / ۲۸ سال</span>
+          </div>
+
+          <!-- Left side in RTL: Coral/Red Edit Button -->
+          <button 
+            id="openEditBtn" 
+            class="text-[#ef4444] hover:text-[#f87171] text-[13px] font-medium transition-colors press-effect"
+          >
+            ویرایش
+          </button>
+        </div>
+
+        <!-- Emotion/State Status Pill Card -->
+        <button 
+          id="moodSelectorBtn"
+          title="تغییر احساسات"
+          class="w-full bg-[#111721] hover:bg-[#131b26] border border-[#1f2937] rounded-2xl py-3 px-4 flex items-center justify-between transition-all press-effect group"
+        >
+          <!-- Left side in RTL: Text description -->
+          <span id="moodLabel" class="text-slate-100 text-[14.5px] font-medium pr-1">
+            خوشحال و آرام
+          </span>
+
+          <!-- Right side in RTL: Rounded icon container with green smiley -->
+          <div id="moodIconBox" class="w-10 h-10 rounded-xl bg-emerald-950/70 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+            <i data-lucide="smile" class="w-5 h-5 stroke-[2]"></i>
+          </div>
+        </button>
+
+      </section>
+
+      <!-- Primary Action Call-To-Action Button -->
+      <button 
+        id="startChatBtn"
+        class="w-full bg-[#e53945] hover:bg-[#d42c38] active:bg-[#c3222e] text-white font-bold py-3.5 px-4 rounded-[18px] text-[15px] sm:text-base shadow-lg shadow-red-950/40 transition-all press-effect flex items-center justify-center gap-2 mt-1"
+      >
+        <span>شروع گفتگو با ترب‌یار</span>
+      </button>
+
+    </div>
+
+    <!-- Empty footer space to maintain balanced vertical hierarchy -->
+    <div class="h-2"></div>
+
+  </main>
+
+  <!-- Edit User Modal Dialog (Accessible via 'ویرایش') -->
+  <div id="editModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-xs bg-[#1a2330] border border-[#2b394c] rounded-2xl p-5 shadow-2xl text-right">
+      <h3 class="text-base font-bold text-white mb-4">ویرایش مشخصات کاربر</h3>
+      
+      <div class="space-y-3 mb-5">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">جنسیت</label>
+          <select id="genderSelect" class="w-full bg-[#121822] border border-[#2d3a4d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500">
+            <option value="آقا">آقا</option>
+            <option value="خانم">خانم</option>
+            <option value="نامشخص">نامشخص</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">سن</label>
+          <input id="ageInput" type="number" value="28" min="10" max="100" class="w-full bg-[#121822] border border-[#2d3a4d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500">
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="saveEditBtn" class="flex-1 bg-[#e53945] hover:bg-[#d02c38] text-white text-xs font-semibold py-2 rounded-xl transition-all">
+          ذخیره تغییرات
+        </button>
+        <button id="cancelEditBtn" class="px-4 py-2 bg-[#253040] text-gray-300 text-xs font-medium rounded-xl hover:bg-[#2e3b4e] transition-all">
+          انصراف
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mood Selection Dropdown/Sheet Dialog -->
+  <div id="moodModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-xs bg-[#1a2330] border border-[#2b394c] rounded-2xl p-4 shadow-2xl text-right">
+      <h3 class="text-sm font-bold text-white mb-3">انتخاب احساسات شناسایی شده</h3>
+      
+      <div class="space-y-1.5" id="moodList">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <button id="closeMoodModalBtn" class="w-full mt-3 py-2 bg-[#253040] text-gray-300 text-xs font-medium rounded-xl hover:bg-[#2e3b4e] transition-all">
+        بستن
+      </button>
+    </div>
+  </div>
+
+  <!-- Chat Started Interactive Toast / Alert -->
+  <div id="statusToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#1b2533] border border-red-500/40 text-slate-100 text-xs px-5 py-3 rounded-2xl shadow-2xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2 whitespace-nowrap">
+    <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+    <span id="toastMsg">گفتگوی هوشمند ترب‌یار آغاز شد...</span>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Landmark wireframe point generator (460x300 canonical coordinate space)
+    function generateFaceMesh() {
+      const wiresContainer = document.getElementById('meshWires');
+      const pointsContainer = document.getElementById('meshPoints');
+
+      // Canonical face points mapped around the face center
+      const nodes = [
+        // Forehead & Brow
+        { id: 0, x: 200, y: 110 }, { id: 1, x: 175, y: 115 }, { id: 2, x: 225, y: 115 },
+        { id: 3, x: 155, y: 125 }, { id: 4, x: 245, y: 125 }, { id: 5, x: 135, y: 140 },
+        { id: 6, x: 265, y: 140 },
+        // Eyes
+        { id: 7, x: 170, y: 142 }, { id: 8, x: 185, y: 142 }, { id: 9, x: 178, y: 138 }, { id: 10, x: 178, y: 146 },
+        { id: 11, x: 215, y: 142 }, { id: 12, x: 230, y: 142 }, { id: 13, x: 222, y: 138 }, { id: 14, x: 222, y: 146 },
+        // Nose bridge & tip
+        { id: 15, x: 200, y: 132 }, { id: 16, x: 200, y: 150 }, { id: 17, x: 200, y: 165 },
+        { id: 18, x: 190, y: 168 }, { id: 19, x: 210, y: 168 },
+        // Cheeks & Jawline
+        { id: 20, x: 145, y: 165 }, { id: 21, x: 255, y: 165 },
+        { id: 22, x: 150, y: 195 }, { id: 23, x: 250, y: 195 },
+        { id: 24, x: 165, y: 225 }, { id: 25, x: 235, y: 225 },
+        { id: 26, x: 185, y: 245 }, { id: 27, x: 215, y: 245 },
+        { id: 28, x: 200, y: 250 }, // Chin
+        // Mouth & Lips
+        { id: 29, x: 182, y: 190 }, { id: 30, x: 218, y: 190 },
+        { id: 31, x: 200, y: 185 }, { id: 32, x: 200, y: 197 },
+        { id: 33, x: 190, y: 190 }, { id: 34, x: 210, y: 190 },
+        // Upper temples
+        { id: 35, x: 130, y: 115 }, { id: 36, x: 270, y: 115 },
+        { id: 37, x: 160, y: 95 },  { id: 38, x: 240, y: 95 },
+        { id: 39, x: 200, y: 90 }
+      ];
+
+      // Connecting edges to create triangulation wireframe
+      const edges = [
+        [39, 37], [39, 38], [37, 35], [38, 36], [37, 0], [38, 0], [35, 5], [36, 6],
+        [0, 1], [0, 2], [1, 3], [2, 4], [3, 5], [4, 6],
+        [1, 15], [2, 15], [0, 15], [15, 16], [16, 17],
+        [1, 7], [1, 9], [7, 9], [9, 8], [8, 10], [10, 7],
+        [2, 11], [2, 13], [11, 13], [13, 12], [12, 14], [14, 11],
+        [5, 20], [6, 21], [20, 22], [21, 23], [22, 24], [23, 25],
+        [24, 26], [25, 27], [26, 28], [27, 28],
+        [17, 18], [17, 19], [18, 31], [19, 31], [17, 31],
+        [20, 18], [21, 19], [22, 29], [23, 30],
+        [29, 31], [30, 31], [29, 32], [30, 32], [31, 32],
+        [29, 33], [30, 34], [33, 34],
+        [32, 26], [32, 27], [32, 28]
+      ];
+
+      // Render lines
+      edges.forEach(([fromId, toId]) => {
+        const from = nodes.find(n => n.id === fromId);
+        const to = nodes.find(n => n.id === toId);
+        if (from && to) {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', from.x);
+          line.setAttribute('y1', from.y);
+          line.setAttribute('x2', to.x);
+          line.setAttribute('y2', to.y);
+          wiresContainer.appendChild(line);
+        }
+      });
+
+      // Render points
+      nodes.forEach(node => {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', node.x);
+        circle.setAttribute('cy', node.y);
+        circle.setAttribute('r', '1.6');
+        circle.setAttribute('class', 'pulse-node');
+        pointsContainer.appendChild(circle);
+      });
+    }
+
+    // Call wireframe generator on load
+    generateFaceMesh();
+
+    // Camera Switch Logic (Webcam vs. Portrait Image)
+    const toggleCamBtn = document.getElementById('toggleCamBtn');
+    const portraitImg = document.getElementById('portraitImg');
+    const cameraFeed = document.getElementById('cameraFeed');
+    let isWebcamActive = false;
+    let mediaStream = null;
+
+    toggleCamBtn.addEventListener('click', async () => {
+      if (!isWebcamActive) {
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
+          });
+          cameraFeed.srcObject = mediaStream;
+          cameraFeed.classList.remove('hidden');
+          portraitImg.classList.add('hidden');
+          toggleCamBtn.innerHTML = '<i data-lucide="image" class="w-4 h-4"></i>';
+          toggleCamBtn.title = "نمایش عکس پیش‌فرض";
+          lucide.createIcons();
+          isWebcamActive = true;
+          showToast('دوربین زنده فعال شد');
+        } catch (err) {
+          showToast('دسترسی به دوربین داده نشد یا در دسترس نیست');
+        }
+      } else {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => track.stop());
+        }
+        cameraFeed.classList.add('hidden');
+        portraitImg.classList.remove('hidden');
+        toggleCamBtn.innerHTML = '<i data-lucide="camera" class="w-4 h-4"></i>';
+        toggleCamBtn.title = "تغییر به دوربین زنده";
+        lucide.createIcons();
+        isWebcamActive = false;
+        showToast('حالت عکس پیش‌فرض فعال شد');
+      }
+    });
+
+    // Demographics Editing Logic
+    const openEditBtn = document.getElementById('openEditBtn');
+    const editModal = document.getElementById('editModal');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const userDemographics = document.getElementById('userDemographics');
+    const genderSelect = document.getElementById('genderSelect');
+    const ageInput = document.getElementById('ageInput');
+
+    openEditBtn.addEventListener('click', () => {
+      editModal.classList.remove('hidden');
+    });
+
+    cancelEditBtn.addEventListener('click', () => {
+      editModal.classList.add('hidden');
+    });
+
+    saveEditBtn.addEventListener('click', () => {
+      const gender = genderSelect.value;
+      const age = ageInput.value || 28;
+      // Convert English digits to Persian
+      const persianAge = String(age).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+      userDemographics.textContent = `${gender} / ${persianAge} سال`;
+      editModal.classList.add('hidden');
+      showToast('مشخصات با موفقیت به‌روزرسانی شد');
+    });
+
+    // Mood Selector Logic
+    const moods = [
+      { id: 'happy', text: 'خوشحال و آرام', icon: 'smile', colorClass: 'text-emerald-400', bgClass: 'bg-emerald-950/70 border-emerald-500/30' },
+      { id: 'neutral', text: 'خنثی و متمرکز', icon: 'meh', colorClass: 'text-blue-400', bgClass: 'bg-blue-950/70 border-blue-500/30' },
+      { id: 'tired', text: 'کمی خسته و بی‌حوصله', icon: 'frown', colorClass: 'text-amber-400', bgClass: 'bg-amber-950/70 border-amber-500/30' },
+      { id: 'excited', text: 'بسیار پرانرژی و مشتاق', icon: 'sparkles', colorClass: 'text-rose-400', bgClass: 'bg-rose-950/70 border-rose-500/30' }
+    ];
+
+    const moodSelectorBtn = document.getElementById('moodSelectorBtn');
+    const moodModal = document.getElementById('moodModal');
+    const moodList = document.getElementById('moodList');
+    const closeMoodModalBtn = document.getElementById('closeMoodModalBtn');
+    const moodLabel = document.getElementById('moodLabel');
+    const moodIconBox = document.getElementById('moodIconBox');
+
+    // Populate mood modal options
+    moods.forEach(mood => {
+      const itemBtn = document.createElement('button');
+      itemBtn.className = 'w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-[#232f40] transition-colors text-right';
+      itemBtn.innerHTML = `
+        <span class="text-xs font-semibold text-slate-200">${mood.text}</span>
+        <div class="w-8 h-8 rounded-lg ${mood.bgClass} flex items-center justify-center ${mood.colorClass}">
+          <i data-lucide="${mood.icon}" class="w-4 h-4"></i>
+        </div>
+      `;
+      itemBtn.addEventListener('click', () => {
+        moodLabel.textContent = mood.text;
+        moodIconBox.className = `w-10 h-10 rounded-xl ${mood.bgClass} border flex items-center justify-center ${mood.colorClass} group-hover:scale-105 transition-transform`;
+        moodIconBox.innerHTML = `<i data-lucide="${mood.icon}" class="w-5 h-5 stroke-[2]"></i>`;
+        lucide.createIcons();
+        moodModal.classList.add('hidden');
+        showToast(`حالت احساسی روی «${mood.text}» تنظیم شد`);
+      });
+      moodList.appendChild(itemBtn);
+    });
+
+    moodSelectorBtn.addEventListener('click', () => {
+      moodModal.classList.remove('hidden');
+    });
+
+    closeMoodModalBtn.addEventListener('click', () => {
+      moodModal.classList.add('hidden');
+    });
+
+    // Start Conversation Action
+    const startChatBtn = document.getElementById('startChatBtn');
+    startChatBtn.addEventListener('click', () => {
+      showToast('در حال اتصال به دستیار هوشمند ترب‌یار...');
+    });
+
+    // Toast notification utility
+    let toastTimer;
+    function showToast(message) {
+      const toast = document.getElementById('statusToast');
+      const toastMsg = document.getElementById('toastMsg');
+      toastMsg.textContent = message;
+      toast.classList.remove('opacity-0', 'translate-y-2');
+      toast.classList.add('opacity-100', '-translate-y-1');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100', '-translate-y-1');
+        toast.classList.add('opacity-0', 'translate-y-2');
+      }, 2600);
+    }
+  </script>
+</body>
+</html>

@@ -598,18 +598,64 @@ class ShoppingAgent:
             },
         )
 
+        # Enrich retrieved products with real shop details from repository
+        retrieved_products_data = []
+        for d in retrieved_docs:
+            meta = d.metadata
+            pid = meta.get("product_id", "")
+            title = meta.get("persian_title") or "محصول ترب"
+            score = meta.get("rerank_score", meta.get("score", 0.0))
+
+            item_data = {
+                "product_id": pid,
+                "title": title,
+                "score": score,
+                "category_name": meta.get("category_name"),
+                "brand_name": meta.get("brand_name"),
+            }
+
+            if self.repository and pid:
+                prod_details = (
+                    self.repository.get_product_details_dict(pid)
+                    if hasattr(self.repository, "get_product_details_dict")
+                    else None
+                )
+                if prod_details:
+                    item_data["min_price"] = prod_details.get("min_price")
+                    item_data["min_price_formatted"] = prod_details.get("min_price_formatted")
+                    item_data["offers_count"] = prod_details.get("offers_count")
+                    item_data["image_url"] = prod_details.get("primary_image")
+                    item_data["shops"] = prod_details.get("shops", [])
+                    item_data["specs"] = prod_details.get("specs", [])
+                else:
+                    cheapest = self.repository.offers.get_cheapest_for_product(pid)
+                    if cheapest and cheapest.price_toman > 0:
+                        item_data["min_price"] = cheapest.price_toman
+                        item_data["min_price_formatted"] = f"از {cheapest.price_toman:,} تومان"
+                    offers = self.repository.offers.get_by_product_id(pid)
+                    shops_data = []
+                    for off in offers:
+                        sh = self.repository.shops.get_by_id(off.shop_id)
+                        if sh:
+                            shops_data.append({
+                                "shop_id": sh.shop_id,
+                                "shop_name": sh.name,
+                                "price": off.price_toman,
+                                "price_formatted": f"{off.price_toman:,} تومان" if off.price_toman > 0 else "استعلام",
+                                "city": sh.location_label or "تهران",
+                                "warranty": off.warranty or "گارانتی معتبر فروشگاه",
+                                "supports_fast_delivery": bool(sh.supports_fast_delivery),
+                            })
+                    item_data["shops"] = shops_data
+                    item_data["offers_count"] = len(shops_data)
+
+            retrieved_products_data.append(item_data)
+
         return {
             "session_id": session.session_id,
             "reply": assistant_reply,
             "search_intent": search_intent.to_dict(),
-            "retrieved_products": [
-                {
-                    "product_id": d.metadata.get("product_id"),
-                    "title": d.metadata.get("persian_title"),
-                    "score": d.metadata.get("rerank_score", d.metadata.get("score")),
-                }
-                for d in retrieved_docs
-            ],
+            "retrieved_products": retrieved_products_data,
             "cross_sell_offer": asdict(cross_sell) if cross_sell else None,
             "customer_profile": session.customer_profile.to_dict(),
             "history_length": len(session.messages),

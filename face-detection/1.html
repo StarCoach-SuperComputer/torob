@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>ترب‌یار - آنالیز زنده چهره</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vazirmatn Persian Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      body {
+        font-family:
+          "Vazirmatn",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background-color: #11171f;
+        color: #f1f5f9;
+        user-select: none;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Equalizer wave animation */
+      @keyframes eqBar1 {
+        0%,
+        100% {
+          height: 6px;
+        }
+        50% {
+          height: 18px;
+        }
+      }
+      @keyframes eqBar2 {
+        0%,
+        100% {
+          height: 18px;
+        }
+        50% {
+          height: 8px;
+        }
+      }
+      @keyframes eqBar3 {
+        0%,
+        100% {
+          height: 10px;
+        }
+        50% {
+          height: 22px;
+        }
+      }
+
+      .eq-bar-1 {
+        animation: eqBar1 0.75s ease-in-out infinite;
+      }
+      .eq-bar-2 {
+        animation: eqBar2 0.65s ease-in-out infinite 0.15s;
+      }
+      .eq-bar-3 {
+        animation: eqBar3 0.85s ease-in-out infinite 0.3s;
+      }
+
+      /* Scanline effect */
+      .scan-line {
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          rgba(239, 68, 68, 0.25),
+          transparent
+        );
+        animation: scanSweep 3s ease-in-out infinite;
+      }
+      @keyframes scanSweep {
+        0% {
+          transform: translateY(-100%);
+        }
+        100% {
+          transform: translateY(320px);
+        }
+      }
+
+      /* Custom subtle scrollbar */
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body
+    class="min-h-screen flex flex-col items-center justify-between p-4 sm:p-6 overflow-x-hidden"
+  >
+    <!-- Header Title -->
+    <header class="w-full text-center pt-5 sm:pt-7">
+      <h1
+        class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white/95 drop-shadow-sm"
+      >
+        ترب‌یار
+      </h1>
+    </header>
+
+    <!-- Main Content Container -->
+    <main
+      class="w-full max-w-sm my-auto flex flex-col items-center justify-center"
+    >
+      <!-- Card Container -->
+      <div
+        class="w-full bg-[#1e2733] border border-[#2b3746] rounded-3xl p-3.5 shadow-2xl shadow-black/60 relative backdrop-blur-md transition-all duration-300"
+      >
+        <!-- Video / Mesh Canvas Wrapper -->
+        <div
+          class="relative w-full aspect-[4/4.3] rounded-2xl overflow-hidden bg-[#151c24] flex items-center justify-center shadow-inner group"
+        >
+          <!-- Live Video Element -->
+          <video
+            id="webcam"
+            class="absolute inset-0 w-full h-full object-cover -scale-x-100 hidden"
+            autoplay
+            playsinline
+            muted
+          ></video>
+
+          <!-- Simulated Portrait Fallback (when camera is not active or requested) -->
+          <div
+            id="simulatedPortrait"
+            class="absolute inset-0 w-full h-full bg-cover bg-center"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=80"
+              alt="User Portrait"
+              id="portraitImg"
+              class="w-full h-full object-cover filter brightness-90 contrast-105"
+              onerror="
+                this.src =
+                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=700&q=80'
+              "
+            />
+          </div>
+
+          <!-- Wireframe & Landmark Canvas Overlay -->
+          <canvas
+            id="meshCanvas"
+            class="absolute inset-0 w-full h-full pointer-events-none z-10"
+          ></canvas>
+
+          <!-- Laser Scan Effect Bar -->
+          <div
+            class="scan-line absolute left-0 right-0 h-16 pointer-events-none z-20"
+          ></div>
+
+          <!-- Red Viewfinder / Bracket Framing Corners (Exact visual from image) -->
+          <!-- Top Left Corner -->
+          <div
+            class="absolute top-3.5 left-3.5 w-7 h-7 border-t-[3px] border-l-[3px] border-[#ef4444] rounded-tl-lg pointer-events-none z-20 opacity-90 drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]"
+          ></div>
+          <!-- Top Right Corner -->
+          <div
+            class="absolute top-3.5 right-3.5 w-7 h-7 border-t-[3px] border-r-[3px] border-[#ef4444] rounded-tr-lg pointer-events-none z-20 opacity-90 drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]"
+          ></div>
+          <!-- Bottom Left Corner -->
+          <div
+            class="absolute bottom-3.5 left-3.5 w-7 h-7 border-b-[3px] border-l-[3px] border-[#ef4444] rounded-bl-lg pointer-events-none z-20 opacity-90 drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]"
+          ></div>
+          <!-- Bottom Right Corner -->
+          <div
+            class="absolute bottom-3.5 right-3.5 w-7 h-7 border-b-[3px] border-r-[3px] border-[#ef4444] rounded-br-lg pointer-events-none z-20 opacity-90 drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]"
+          ></div>
+
+          <!-- Subtle Top-Left Realtime FPS / Status Badge -->
+          <div
+            class="absolute top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-[10px] text-gray-300 font-mono flex items-center gap-1.5 z-20"
+          >
+            <span
+              class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"
+            ></span>
+            <span>486 FPS • فعال</span>
+          </div>
+        </div>
+
+        <!-- Bottom Status Bar inside Card (Matching Screenshot) -->
+        <div
+          class="pt-4 pb-2 px-2 flex items-center justify-center gap-3 text-right"
+        >
+          <!-- Equalizer Animated Icon (Red lines) -->
+          <div class="flex items-center gap-[3px] h-6 px-1 order-2">
+            <span
+              class="w-[3.5px] bg-[#ef4444] rounded-full eq-bar-1 drop-shadow-[0_0_6px_rgba(239,68,68,0.6)]"
+            ></span>
+            <span
+              class="w-[3.5px] bg-[#ef4444] rounded-full eq-bar-2 drop-shadow-[0_0_6px_rgba(239,68,68,0.6)]"
+            ></span>
+            <span
+              class="w-[3.5px] bg-[#ef4444] rounded-full eq-bar-3 drop-shadow-[0_0_6px_rgba(239,68,68,0.6)]"
+            ></span>
+          </div>
+
+          <!-- Text Message -->
+          <span
+            class="text-sm sm:text-base font-medium text-slate-200 tracking-normal order-1"
+          >
+            درحال آنالیز زنده چهره و احساسات
+          </span>
+        </div>
+      </div>
+
+      <!-- Live Emotion Analytics Card (Collapsible details) -->
+      <div
+        id="analyticsPanel"
+        class="w-full mt-3 bg-[#18202b]/90 border border-[#263140] rounded-2xl p-3.5 text-xs text-gray-300 space-y-2.5 transition-all"
+      >
+        <div
+          class="flex items-center justify-between border-b border-gray-700/50 pb-1.5"
+        >
+          <span class="font-semibold text-slate-100 flex items-center gap-1.5">
+            <i data-lucide="activity" class="w-3.5 h-3.5 text-red-400"></i>
+            داده‌های پردازش هوش مصنوعی
+          </span>
+          <span
+            id="detectedState"
+            class="text-emerald-400 bg-emerald-950/70 border border-emerald-800/40 px-2 py-0.5 rounded-full text-[10px]"
+          >
+            تمرکز بالا (89٪)
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
+          <div
+            class="bg-[#121821] p-2 rounded-xl border border-gray-800 flex flex-col gap-1"
+          >
+            <div class="flex justify-between text-gray-400">
+              <span>آرامش و تمرکز</span>
+              <span id="metricCalm" class="text-sky-400 font-mono">84%</span>
+            </div>
+            <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                id="barCalm"
+                class="bg-sky-400 h-full rounded-full transition-all duration-300"
+                style="width: 84%"
+              ></div>
+            </div>
+          </div>
+
+          <div
+            class="bg-[#121821] p-2 rounded-xl border border-gray-800 flex flex-col gap-1"
+          >
+            <div class="flex justify-between text-gray-400">
+              <span>لبخند / انرژی</span>
+              <span id="metricSmile" class="text-amber-400 font-mono">42%</span>
+            </div>
+            <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                id="barSmile"
+                class="bg-amber-400 h-full rounded-full transition-all duration-300"
+                style="width: 42%"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Row -->
+      <div class="w-full mt-3 flex items-center justify-between gap-2 text-xs">
+        <!-- Toggle Real Camera -->
+        <button
+          id="toggleCameraBtn"
+          class="flex-1 bg-[#222c3a] hover:bg-[#2b3748] active:scale-95 transition-all text-slate-200 py-2.5 px-3 rounded-xl border border-[#334255] flex items-center justify-center gap-1.5 shadow-sm"
+        >
+          <i data-lucide="video" class="w-4 h-4 text-red-400"></i>
+          <span id="cameraBtnText">فعال‌سازی دوربین</span>
+        </button>
+
+        <!-- Toggle Sample Faces -->
+        <button
+          id="nextPhotoBtn"
+          class="bg-[#222c3a] hover:bg-[#2b3748] active:scale-95 transition-all text-slate-200 py-2.5 px-3 rounded-xl border border-[#334255] flex items-center justify-center gap-1.5 shadow-sm"
+        >
+          <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-400"></i>
+          <span>تغییر تصویر</span>
+        </button>
+
+        <!-- Toggle Mesh Style -->
+        <button
+          id="toggleStyleBtn"
+          class="bg-[#222c3a] hover:bg-[#2b3748] active:scale-95 transition-all text-slate-200 py-2.5 px-3 rounded-xl border border-[#334255] flex items-center justify-center gap-1.5 shadow-sm"
+        >
+          <i data-lucide="layers" class="w-4 h-4 text-red-400"></i>
+          <span>مش</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- Footer Info -->
+    <footer
+      class="w-full text-center pb-2 text-[11px] text-slate-500 font-light flex items-center justify-center gap-2"
+    >
+      <span>نسخه پیشرفته پردازش تصویر</span>
+      <span>•</span>
+      <span>امنیت داده محلی</span>
+    </footer>
+
+    <script>
+      // Initialize icons
+      lucide.createIcons();
+
+      // DOM Elements
+      const canvas = document.getElementById("meshCanvas");
+      const ctx = canvas.getContext("2d");
+      const video = document.getElementById("webcam");
+      const portraitImg = document.getElementById("portraitImg");
+      const simulatedPortrait = document.getElementById("simulatedPortrait");
+      const toggleCameraBtn = document.getElementById("toggleCameraBtn");
+      const cameraBtnText = document.getElementById("cameraBtnText");
+      const nextPhotoBtn = document.getElementById("nextPhotoBtn");
+      const toggleStyleBtn = document.getElementById("toggleStyleBtn");
+
+      // Metrics elements
+      const metricCalm = document.getElementById("metricCalm");
+      const barCalm = document.getElementById("barCalm");
+      const metricSmile = document.getElementById("metricSmile");
+      const barSmile = document.getElementById("barSmile");
+      const detectedState = document.getElementById("detectedState");
+
+      let isCameraActive = false;
+      let cameraStream = null;
+      let meshColor = "rgba(239, 68, 68, "; // Red color matching design
+      let showMeshPoints = true;
+
+      // Sample portraits for simulation
+      const samplePortraits = [
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=80",
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=700&q=80",
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=700&q=80",
+        "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=700&q=80",
+      ];
+      let portraitIndex = 0;
+
+      // Resize canvas dynamically to match parent container
+      function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      // Procedural Face Mesh Model (Normalized coordinates roughly aligned with human facial landmarks)
+      // Structure: Chin curve, Jaw, Cheeks, Eyebrows, Eyes, Nose bridge, Mouth, Forehead
+      const baseLandmarks = [
+        // Chin and jawline (15 points)
+        { id: 0, x: 0.5, y: 0.81 },
+        { id: 1, x: 0.44, y: 0.79 },
+        { id: 2, x: 0.56, y: 0.79 },
+        { id: 3, x: 0.38, y: 0.75 },
+        { id: 4, x: 0.62, y: 0.75 },
+        { id: 5, x: 0.33, y: 0.68 },
+        { id: 6, x: 0.67, y: 0.68 },
+        { id: 7, x: 0.3, y: 0.59 },
+        { id: 8, x: 0.7, y: 0.59 },
+        { id: 9, x: 0.28, y: 0.49 },
+        { id: 10, x: 0.72, y: 0.49 },
+        { id: 11, x: 0.29, y: 0.41 },
+        { id: 12, x: 0.71, y: 0.41 },
+
+        // Forehead contour
+        { id: 13, x: 0.33, y: 0.35 },
+        { id: 14, x: 0.67, y: 0.35 },
+        { id: 15, x: 0.41, y: 0.32 },
+        { id: 16, x: 0.59, y: 0.32 },
+        { id: 17, x: 0.5, y: 0.31 },
+
+        // Eyebrows
+        // Right (user left)
+        { id: 18, x: 0.34, y: 0.42 },
+        { id: 19, x: 0.39, y: 0.4 },
+        { id: 20, x: 0.45, y: 0.41 },
+        // Left (user right)
+        { id: 21, x: 0.55, y: 0.41 },
+        { id: 22, x: 0.61, y: 0.4 },
+        { id: 23, x: 0.66, y: 0.42 },
+
+        // Eyes
+        // Right Eye
+        { id: 24, x: 0.36, y: 0.46 },
+        { id: 25, x: 0.4, y: 0.44 },
+        { id: 26, x: 0.44, y: 0.46 },
+        { id: 27, x: 0.4, y: 0.47 },
+        // Left Eye
+        { id: 28, x: 0.56, y: 0.46 },
+        { id: 29, x: 0.6, y: 0.44 },
+        { id: 30, x: 0.64, y: 0.46 },
+        { id: 31, x: 0.6, y: 0.47 },
+
+        // Nose
+        { id: 32, x: 0.5, y: 0.42 }, // Top bridge
+        { id: 33, x: 0.5, y: 0.48 }, // Mid bridge
+        { id: 34, x: 0.5, y: 0.54 }, // Tip
+        { id: 35, x: 0.45, y: 0.55 }, // Left nostril
+        { id: 36, x: 0.55, y: 0.55 }, // Right nostril
+
+        // Mouth & Lips
+        { id: 37, x: 0.42, y: 0.62 }, // Outer left
+        { id: 38, x: 0.58, y: 0.62 }, // Outer right
+        { id: 39, x: 0.5, y: 0.6 }, // Upper lip peak
+        { id: 40, x: 0.5, y: 0.65 }, // Lower lip bottom
+        { id: 41, x: 0.46, y: 0.61 },
+        { id: 42, x: 0.54, y: 0.61 },
+        { id: 43, x: 0.46, y: 0.64 },
+        { id: 44, x: 0.54, y: 0.64 },
+
+        // Cheek & interior triangulation points
+        { id: 45, x: 0.36, y: 0.54 },
+        { id: 46, x: 0.64, y: 0.54 },
+        { id: 47, x: 0.4, y: 0.69 },
+        { id: 48, x: 0.6, y: 0.69 },
+        { id: 49, x: 0.5, y: 0.72 },
+      ];
+
+      // Delaunay-style wireframe connection graph between landmarks
+      const connections = [
+        // Jaw
+        [11, 9],
+        [9, 7],
+        [7, 5],
+        [5, 3],
+        [3, 1],
+        [1, 0],
+        [0, 2],
+        [2, 4],
+        [4, 6],
+        [6, 8],
+        [8, 10],
+        [10, 12],
+        // Forehead
+        [11, 13],
+        [13, 15],
+        [15, 17],
+        [17, 16],
+        [16, 14],
+        [14, 12],
+        // Eyebrows
+        [18, 19],
+        [19, 20],
+        [21, 22],
+        [22, 23],
+        [13, 18],
+        [15, 19],
+        [17, 20],
+        [17, 21],
+        [16, 22],
+        [14, 23],
+        // Eyes
+        [24, 25],
+        [25, 26],
+        [26, 27],
+        [27, 24],
+        [28, 29],
+        [29, 30],
+        [30, 31],
+        [31, 28],
+        // Brow to Eye
+        [18, 24],
+        [19, 25],
+        [20, 26],
+        [21, 28],
+        [22, 29],
+        [23, 30],
+        // Nose
+        [20, 32],
+        [21, 32],
+        [32, 33],
+        [33, 34],
+        [34, 35],
+        [34, 36],
+        [35, 33],
+        [36, 33],
+        [26, 35],
+        [28, 36],
+        // Cheeks
+        [9, 45],
+        [45, 35],
+        [7, 45],
+        [5, 47],
+        [45, 47],
+        [10, 46],
+        [46, 36],
+        [8, 46],
+        [6, 48],
+        [46, 48],
+        // Mouth
+        [37, 41],
+        [41, 39],
+        [39, 42],
+        [42, 38],
+        [37, 43],
+        [43, 40],
+        [40, 44],
+        [44, 38],
+        [34, 39],
+        [35, 37],
+        [36, 38],
+        // Mouth to chin
+        [37, 47],
+        [38, 48],
+        [47, 49],
+        [48, 49],
+        [40, 49],
+        [49, 0],
+        [47, 1],
+        [48, 2],
+      ];
+
+      // Tracking variables for micro-movement simulation
+      let time = 0;
+
+      function renderFaceMesh() {
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        time += 0.04;
+
+        // Realistic micro head movement / jitter to give realistic AI scanning feel
+        const headSwayX =
+          Math.sin(time * 0.8) * 0.006 + Math.cos(time * 1.7) * 0.003;
+        const headSwayY =
+          Math.cos(time * 0.6) * 0.005 + Math.sin(time * 1.3) * 0.002;
+        const breathingScale = 1 + Math.sin(time * 1.2) * 0.005;
+
+        // Calculate pixel coordinates for all points
+        const points = baseLandmarks.map((pt) => {
+          // Subtle organic noise for every landmark
+          const microNoiseX = Math.sin(time * 3 + pt.id * 0.4) * 0.0015;
+          const microNoiseY = Math.cos(time * 3 + pt.id * 0.4) * 0.0015;
+
+          const nx =
+            0.5 + (pt.x - 0.5) * breathingScale + headSwayX + microNoiseX;
+          const ny =
+            0.55 + (pt.y - 0.55) * breathingScale + headSwayY + microNoiseY;
+
+          return {
+            x: nx * w,
+            y: ny * h,
+          };
+        });
+
+        // 1. Draw Connecting Mesh Lines
+        ctx.lineWidth = 0.9;
+        for (const [startIndex, endIndex] of connections) {
+          const p1 = points[startIndex];
+          const p2 = points[endIndex];
+          if (!p1 || !p2) continue;
+
+          // Subtle gradient stroke for mesh depth
+          const distFromCenter =
+            Math.hypot(p1.x - w / 2, p1.y - h / 2) / (w * 0.4);
+          const alpha = Math.max(0.2, 0.65 - distFromCenter * 0.25);
+
+          ctx.strokeStyle = `${meshColor}${alpha})`;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+
+        // 2. Draw Landmark Dots (Glowing red nodes matching screenshot)
+        if (showMeshPoints) {
+          for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+            const dotPulse = Math.sin(time * 4 + i) * 0.5 + 1.2;
+
+            // Outer Glow
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, dotPulse * 1.8, 0, Math.PI * 2);
+            ctx.fillStyle = `${meshColor}0.35)`;
+            ctx.fill();
+
+            // Core Node
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, dotPulse * 0.9, 0, Math.PI * 2);
+            ctx.fillStyle = "#ff4d4d";
+            ctx.fill();
+          }
+        }
+
+        // 3. Update realtime analytic metrics with natural organic oscillations
+        if (Math.random() < 0.05) {
+          const calmVal = Math.floor(
+            82 + Math.sin(time) * 9 + Math.random() * 4,
+          );
+          const smileVal = Math.floor(
+            40 + Math.cos(time * 1.5) * 8 + Math.random() * 5,
+          );
+          metricCalm.innerText = `${calmVal}%`;
+          barCalm.style.width = `${calmVal}%`;
+          metricSmile.innerText = `${smileVal}%`;
+          barSmile.style.width = `${smileVal}%`;
+
+          if (smileVal > 48) {
+            detectedState.innerText = "حالت شادمان (مثبت)";
+            detectedState.className =
+              "text-amber-400 bg-amber-950/70 border border-amber-800/40 px-2 py-0.5 rounded-full text-[10px]";
+          } else {
+            detectedState.innerText = `تمرکز بالا (${calmVal}٪)`;
+            detectedState.className =
+              "text-emerald-400 bg-emerald-950/70 border border-emerald-800/40 px-2 py-0.5 rounded-full text-[10px]";
+          }
+        }
+
+        requestAnimationFrame(renderFaceMesh);
+      }
+
+      // Toggle User Camera
+      async function toggleCamera() {
+        if (isCameraActive) {
+          // Turn off camera
+          if (cameraStream) {
+            cameraStream.getTracks().forEach((track) => track.stop());
+            cameraStream = null;
+          }
+          video.classList.add("hidden");
+          simulatedPortrait.classList.remove("hidden");
+          cameraBtnText.innerText = "فعال‌سازی دوربین";
+          isCameraActive = false;
+        } else {
+          // Request Camera
+          try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                width: { ideal: 640 },
+                height: { ideal: 640 },
+                facingMode: "user",
+              },
+              audio: false,
+            });
+            video.srcObject = cameraStream;
+            await video.play();
+            video.classList.remove("hidden");
+            simulatedPortrait.classList.add("hidden");
+            cameraBtnText.innerText = "قطع دوربین";
+            isCameraActive = true;
+          } catch (err) {
+            // Camera permission denied or not available; show friendly fallback message
+            const notif = document.createElement("div");
+            notif.className =
+              "fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-950 border border-red-500/50 text-red-200 px-4 py-2 rounded-xl text-xs z-50 shadow-xl transition-all";
+            notif.innerText =
+              "دسترسی به دوربین داده نشد؛ از تصویر شبیه‌ساز استفاده می‌شود.";
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 4000);
+          }
+        }
+      }
+
+      // Cycle through sample face portraits
+      function nextSamplePortrait() {
+        if (isCameraActive) {
+          toggleCamera(); // revert to sample mode first
+        }
+        portraitIndex = (portraitIndex + 1) % samplePortraits.length;
+        portraitImg.src = samplePortraits[portraitIndex];
+      }
+
+      // Toggle mesh visibility or style
+      function toggleMeshStyle() {
+        showMeshPoints = !showMeshPoints;
+      }
+
+      // Event listeners
+      toggleCameraBtn.addEventListener("click", toggleCamera);
+      nextPhotoBtn.addEventListener("click", nextSamplePortrait);
+      toggleStyleBtn.addEventListener("click", toggleMeshStyle);
+
+      // Start render loop on load
+      window.onload = () => {
+        resizeCanvas();
+        renderFaceMesh();
+      };
+    </script>
+  </body>
+</html>

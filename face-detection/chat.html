@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ترب‌یار - دستیار هوشمند خرید ترب</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vazirmatn Persian Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #0c1017;
+      color: #f1f5f9;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #253040;
+      border-radius: 9999px;
+    }
+
+    /* Pulse wave for listening animation */
+    @keyframes pulseRing {
+      0% {
+        transform: scale(0.98);
+        box-shadow: 0 0 0 0 rgba(229, 57, 69, 0.65);
+      }
+      70% {
+        transform: scale(1.01);
+        box-shadow: 0 0 0 14px rgba(229, 57, 69, 0);
+      }
+      100% {
+        transform: scale(0.98);
+        box-shadow: 0 0 0 0 rgba(229, 57, 69, 0);
+      }
+    }
+
+    .mic-listening {
+      animation: pulseRing 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
+
+    /* Live audio bar equalizer animation */
+    @keyframes soundBar {
+      0%, 100% { height: 4px; }
+      50% { height: 18px; }
+    }
+    .bar-1 { animation: soundBar 0.9s infinite ease-in-out 0.1s; }
+    .bar-2 { animation: soundBar 0.7s infinite ease-in-out 0.3s; }
+    .bar-3 { animation: soundBar 1.1s infinite ease-in-out 0.2s; }
+    .bar-4 { animation: soundBar 0.8s infinite ease-in-out 0.4s; }
+
+    /* Touch scale effect */
+    .press-effect:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-0 sm:p-4">
+
+  <!-- Mobile Screen Frame Container -->
+  <main class="w-full max-w-[420px] h-[100dvh] sm:h-[844px] bg-[#121822] sm:rounded-[36px] sm:border sm:border-[#222e40] sm:shadow-[0_25px_60px_rgba(0,0,0,0.8)] flex flex-col justify-between overflow-hidden relative">
+
+    <!-- Top Navigation Header -->
+    <header class="w-full pt-4 pb-3 px-5 border-b border-[#202b3a] bg-[#121822]/95 backdrop-blur-md z-20 flex-shrink-0">
+      
+      <!-- Upper subtext label -->
+      <div class="w-full flex justify-between items-center mb-1">
+        <span class="text-[11px] font-normal text-gray-500 tracking-wide">
+          دستیار هوشمند خرید ترب
+        </span>
+        <button id="resetDemoBtn" title="تنظیم مجدد گفتگو" class="text-[11px] text-gray-400 hover:text-red-400 transition-colors">
+          گفتگوی جدید
+        </button>
+      </div>
+
+      <!-- Main Assistant Identity -->
+      <div class="flex items-center justify-between">
+        
+        <!-- Right side: Assistant details + Avatar -->
+        <div class="flex items-center gap-3">
+          <!-- Pink/Red Robot Avatar -->
+          <div class="relative">
+            <div class="w-12 h-12 rounded-full bg-[#e83e58] flex items-center justify-center shadow-lg shadow-red-950/40 text-white">
+              <i data-lucide="bot" class="w-6 h-6 stroke-[2.2]"></i>
+            </div>
+            <!-- Online status badge dot at bottom corner -->
+            <span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#10b981] border-2 border-[#121822] shadow-sm animate-pulse"></span>
+          </div>
+
+          <!-- Name & Status -->
+          <div class="flex flex-col text-right">
+            <h1 class="text-base font-bold text-white leading-tight">ترب‌یار</h1>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+              <span id="headerStatus" class="text-xs font-medium text-[#34d399]">آنلاین و در حال گوش دادن</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Left side: Live mini equalizer visualization -->
+        <div id="headerWave" class="flex items-center gap-1 h-5 px-2 py-1 rounded-full bg-[#182230] border border-[#273549]">
+          <span class="w-1 bg-[#34d399] rounded-full bar-1"></span>
+          <span class="w-1 bg-[#34d399] rounded-full bar-2"></span>
+          <span class="w-1 bg-[#34d399] rounded-full bar-3"></span>
+          <span class="w-1 bg-[#34d399] rounded-full bar-4"></span>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Chat Messages & Product Stream (Scrollable Container) -->
+    <section id="chatStream" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 flex flex-col justify-start">
+      
+      <!-- 1. User Pill Response: "مشکی" (Aligned to Left) -->
+      <div class="flex justify-start">
+        <div class="bg-[#e53945] text-white text-[13.5px] font-semibold py-2.5 px-6 rounded-[20px] shadow-md shadow-red-950/30">
+          مشکی
+        </div>
+      </div>
+
+      <!-- 2. Assistant Bubble 1 (Aligned to Right) -->
+      <div class="flex justify-end">
+        <div class="max-w-[78%] bg-[#1b2535] border border-[#263447] text-gray-100 text-[13.5px] font-medium leading-[1.8] py-3.5 px-4 rounded-[22px] rounded-tr-sm shadow-sm text-right">
+          خیلی خوش سلیقه ای. حالا بگو چه سایزی میخوای؟
+        </div>
+      </div>
+
+      <!-- 3. User Pill Response: "ایکس لارج" (Aligned to Left) -->
+      <div class="flex justify-start">
+        <div class="bg-[#e53945] text-white text-[13.5px] font-semibold py-2.5 px-6 rounded-[20px] shadow-md shadow-red-950/30">
+          ایکس لارج
+        </div>
+      </div>
+
+      <!-- 4. Assistant Bubble 2 (Aligned to Right) -->
+      <div class="flex justify-end">
+        <div class="max-w-[85%] bg-[#1b2535] border border-[#263447] text-gray-100 text-[13.5px] font-medium leading-[1.8] py-3.5 px-4 rounded-[22px] rounded-tr-sm shadow-sm text-right">
+          برات بهترین تیشرت مدیوم مشکی رو پیدا کردم
+        </div>
+      </div>
+
+      <!-- 5. Product Recommendation Card 1 (Flat-lay Plain T-shirt) -->
+      <article 
+        class="product-card w-full bg-[#182230] hover:bg-[#1d293a] border border-[#26354a] rounded-[24px] p-3.5 flex items-center justify-between cursor-pointer transition-all press-effect shadow-md"
+        data-title="تیشرت مشکی بیسیک لانگ نخ پنبه (سایز XL)"
+        data-price="۲۵۷,۰۰۰ تومان"
+        data-sellers="۱۷ فروشنده"
+        data-rating="۴.۷ (۸۴ نظر)"
+        data-image="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=500&q=80"
+      >
+        <!-- Left Side: Product Specifications & Price -->
+        <div class="flex-1 flex flex-col justify-between pr-3 text-right">
+          <div>
+            <h3 class="text-sm font-bold text-white leading-snug">تیشرت مشکی سایز ایکس لارج</h3>
+            <p class="text-xs text-gray-300 mt-1 font-medium">از ۲۵۷,۰۰۰ تومان</p>
+          </div>
+          <div class="mt-2.5 flex items-center justify-between">
+            <span class="text-[11.5px] text-gray-400">۱۷ فروشنده</span>
+            <div class="flex items-center text-[#e53945] text-xs font-semibold gap-1 group">
+              <span>مشاهده</span>
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Product Image Thumbnail -->
+        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-white flex-shrink-0 border border-white/10">
+          <img 
+            src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=500&q=80" 
+            alt="تیشرت مشکی سایز ایکس لارج"
+            class="w-full h-full object-cover"
+            loading="lazy"
+          >
+        </div>
+      </article>
+
+      <!-- 6. Product Recommendation Card 2 (Model wearing black shirt) -->
+      <article 
+        class="product-card w-full bg-[#182230] hover:bg-[#1d293a] border border-[#26354a] rounded-[24px] p-3.5 flex items-center justify-between cursor-pointer transition-all press-effect shadow-md"
+        data-title="تیشرت اسپرت مشکی یقه گرد استریت استایل (سایز XL)"
+        data-price="۲۵۷,۰۰۰ تومان"
+        data-sellers="۱۷ فروشنده"
+        data-rating="۴.۹ (۱۲۰ نظر)"
+        data-image="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=500&q=80"
+      >
+        <!-- Left Side: Product Specifications & Price -->
+        <div class="flex-1 flex flex-col justify-between pr-3 text-right">
+          <div>
+            <h3 class="text-sm font-bold text-white leading-snug">تیشرت مشکی سایز ایکس لارج</h3>
+            <p class="text-xs text-gray-300 mt-1 font-medium">از ۲۵۷,۰۰۰ تومان</p>
+          </div>
+          <div class="mt-2.5 flex items-center justify-between">
+            <span class="text-[11.5px] text-gray-400">۱۷ فروشنده</span>
+            <div class="flex items-center text-[#e53945] text-xs font-semibold gap-1 group">
+              <span>مشاهده</span>
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Product Image Thumbnail -->
+        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-gray-900 flex-shrink-0 border border-white/10">
+          <img 
+            src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=500&q=80" 
+            alt="مدل تیشرت مشکی سایز ایکس لارج"
+            class="w-full h-full object-cover"
+            loading="lazy"
+          >
+        </div>
+      </article>
+
+      <!-- Dynamic messages will be appended here -->
+      <div id="chatBottomAnchor" class="h-2"></div>
+    </section>
+
+    <!-- Bottom Voice Interaction Footer Bar -->
+    <footer class="w-full p-4 bg-[#121822]/95 border-t border-[#1e2736] backdrop-blur-lg flex-shrink-0 z-20">
+      
+      <!-- Primary Listening Action Pill Button -->
+      <button 
+        id="voiceToggleBtn" 
+        class="w-full mic-listening bg-[#e53945] hover:bg-[#d52f3b] text-white font-bold py-3.5 px-5 rounded-[22px] flex items-center justify-between transition-all press-effect shadow-lg shadow-red-950/50"
+      >
+        <!-- Status Text -->
+        <span id="voiceButtonText" class="text-[13.5px] sm:text-[14px] font-semibold tracking-normal text-right flex-1 pr-2">
+          میکروفون فعال است (شروع به صحبت کنید...)
+        </span>
+
+        <!-- Microphone Icon with Audio Ring -->
+        <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+          <i id="micIcon" data-lucide="mic" class="w-5 h-5 text-white"></i>
+        </div>
+      </button>
+
+      <!-- Quick prompts recommendation bar -->
+      <div class="flex items-center justify-center gap-2 mt-2.5 overflow-x-auto no-scrollbar py-1 text-[11px] text-gray-400">
+        <span>پیشنهاد:</span>
+        <button class="quick-reply bg-[#1b2535] hover:bg-[#253246] px-2.5 py-1 rounded-lg text-gray-300 border border-[#28374b] transition-colors">
+          ارزان‌ترین فروشگاه کدومه؟
+        </button>
+        <button class="quick-reply bg-[#1b2535] hover:bg-[#253246] px-2.5 py-1 rounded-lg text-gray-300 border border-[#28374b] transition-colors">
+          ارسال فوری دارن؟
+        </button>
+      </div>
+
+    </footer>
+
+    <!-- Product Details Modal Bottom Sheet -->
+    <div id="productDrawer" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center transition-all">
+      <div class="w-full max-w-[420px] bg-[#161f2c] border-t border-[#2a394d] rounded-t-[32px] p-5 shadow-2xl flex flex-col text-right transform transition-transform duration-300">
+        
+        <!-- Drawer handle bar -->
+        <div class="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mb-4 cursor-pointer" id="closeDrawerBar"></div>
+        
+        <div class="flex items-start gap-4 mb-4">
+          <img id="drawerImage" src="" alt="محصول" class="w-20 h-20 rounded-2xl object-cover bg-black/40 border border-white/10 flex-shrink-0">
+          <div class="flex-1">
+            <h4 id="drawerTitle" class="text-sm font-bold text-white leading-snug">نام محصول</h4>
+            <div class="flex items-center gap-2 mt-1.5">
+              <span id="drawerPrice" class="text-xs font-bold text-red-400"></span>
+              <span class="text-[11px] text-gray-400">•</span>
+              <span id="drawerSellers" class="text-[11px] text-gray-300"></span>
+            </div>
+            <p id="drawerRating" class="text-[11px] text-amber-400 mt-1"></p>
+          </div>
+        </div>
+
+        <div class="border-t border-[#222e40] pt-3 mb-4 space-y-2 text-xs text-gray-300">
+          <div class="flex justify-between py-1 border-b border-[#1f2a3a]">
+            <span class="text-gray-400">کمترین قیمت در ترب:</span>
+            <span class="font-bold text-emerald-400">۲۵۷,۰۰۰ تومان (تخفیف ویژه)</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-[#1f2a3a]">
+            <span class="text-gray-400">ضمانت بازگشت کالا:</span>
+            <span>۷ روز تضمین اصالت</span>
+          </div>
+          <div class="flex justify-between py-1">
+            <span class="text-gray-400">محبوب‌ترین فروشگاه:</span>
+            <span class="text-white font-medium">دیجی استایل (ارسال فوری تهران)</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <button id="viewAllSellersBtn" class="bg-[#e53945] hover:bg-[#d02c38] active:scale-95 text-white font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-red-950/40">
+            <span>خرید از ارزان‌ترین فروشنده</span>
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          </button>
+          <button id="closeDrawerBtn" class="bg-[#242f3e] hover:bg-[#2e3b4d] active:scale-95 text-gray-200 font-medium py-3 rounded-xl text-xs transition-all">
+            بازگشت به گفتگو
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="hidden absolute top-20 left-1/2 -translate-x-1/2 bg-[#1b2636]/95 border border-red-500/40 text-slate-100 text-xs px-4 py-2.5 rounded-2xl shadow-2xl z-50 flex items-center gap-2 whitespace-nowrap">
+      <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+      <span id="toastText">در حال پردازش صدا...</span>
+    </div>
+
+  </main>
+
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+
+    // DOM references
+    const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+    const voiceButtonText = document.getElementById('voiceButtonText');
+    const micIcon = document.getElementById('micIcon');
+    const headerStatus = document.getElementById('headerStatus');
+    const headerWave = document.getElementById('headerWave');
+    const chatStream = document.getElementById('chatStream');
+    const chatBottomAnchor = document.getElementById('chatBottomAnchor');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    const productCards = document.querySelectorAll('.product-card');
+    const productDrawer = document.getElementById('productDrawer');
+    const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+    const closeDrawerBar = document.getElementById('closeDrawerBar');
+    const drawerTitle = document.getElementById('drawerTitle');
+    const drawerPrice = document.getElementById('drawerPrice');
+    const drawerSellers = document.getElementById('drawerSellers');
+    const drawerRating = document.getElementById('drawerRating');
+    const drawerImage = document.getElementById('drawerImage');
+    const quickReplies = document.querySelectorAll('.quick-reply');
+    const resetDemoBtn = document.getElementById('resetDemoBtn');
+
+    let isListening = true;
+
+    // Toast Utility
+    let toastTimeout;
+    function showToast(message) {
+      toastText.textContent = message;
+      toast.classList.remove('hidden');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2400);
+    }
+
+    // Toggle Microphone / Listening State
+    voiceToggleBtn.addEventListener('click', () => {
+      isListening = !isListening;
+
+      if (isListening) {
+        voiceToggleBtn.classList.add('mic-listening', 'bg-[#e53945]');
+        voiceToggleBtn.classList.remove('bg-[#242f3e]');
+        voiceButtonText.textContent = 'میکروفون فعال است (شروع به صحبت کنید...)';
+        headerStatus.textContent = 'آنلاین و در حال گوش دادن';
+        headerStatus.className = 'text-xs font-medium text-[#34d399]';
+        headerWave.classList.remove('opacity-30');
+        micIcon.setAttribute('data-lucide', 'mic');
+        showToast('میکروفون فعال شد. صدای شما شنیده می‌شود.');
+      } else {
+        voiceToggleBtn.classList.remove('mic-listening', 'bg-[#e53945]');
+        voiceToggleBtn.classList.add('bg-[#242f3e]');
+        voiceButtonText.textContent = 'میکروفون متوقف شد (برای صحبت لمس کنید)';
+        headerStatus.textContent = 'آماده به کار';
+        headerStatus.className = 'text-xs font-medium text-gray-400';
+        headerWave.classList.add('opacity-30');
+        micIcon.setAttribute('data-lucide', 'mic-off');
+        showToast('میکروفون موقتاً غیرفعال شد.');
+      }
+      lucide.createIcons();
+    });
+
+    // Open Product Details Bottom Sheet
+    productCards.forEach(card => {
+      card.addEventListener('click', () => {
+        drawerTitle.textContent = card.dataset.title;
+        drawerPrice.textContent = card.dataset.price;
+        drawerSellers.textContent = card.dataset.sellers;
+        drawerRating.textContent = `امتیاز کالا: ${card.dataset.rating}`;
+        drawerImage.src = card.dataset.image;
+        productDrawer.classList.remove('hidden');
+      });
+    });
+
+    // Close Drawer
+    function closeDrawer() {
+      productDrawer.classList.add('hidden');
+    }
+    closeDrawerBtn.addEventListener('click', closeDrawer);
+    closeDrawerBar.addEventListener('click', closeDrawer);
+    productDrawer.addEventListener('click', (e) => {
+      if (e.target === productDrawer) closeDrawer();
+    });
+
+    // Handle Quick Prompts
+    quickReplies.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.textContent.trim();
+        addUserMessage(text);
+
+        setTimeout(() => {
+          if (text.includes('ارزان‌ترین')) {
+            addAssistantMessage('فروشگاه «دیجی‌پوش» با قیمت ۲۵۷,۰۰۰ تومان و گارانتی اصالت کمترین قیمت را ارائه داده است.');
+          } else if (text.includes('ارسال فوری')) {
+            addAssistantMessage('بله، ۳ فروشنده از ۱۷ فروشنده گزینه «ارسال با پیک اکسپرس کمتر از ۳ ساعت» دارند.');
+          }
+        }, 800);
+      });
+    });
+
+    // Add user message to conversation stream
+    function addUserMessage(text) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex justify-start';
+      wrapper.innerHTML = `
+        <div class="bg-[#e53945] text-white text-[13.5px] font-semibold py-2.5 px-6 rounded-[20px] shadow-md shadow-red-950/30">
+          ${text}
+        </div>
+      `;
+      chatStream.insertBefore(wrapper, chatBottomAnchor);
+      chatBottomAnchor.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Add assistant response to conversation stream
+    function addAssistantMessage(text) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex justify-end';
+      wrapper.innerHTML = `
+        <div class="max-w-[85%] bg-[#1b2535] border border-[#263447] text-gray-100 text-[13.5px] font-medium leading-[1.8] py-3.5 px-4 rounded-[22px] rounded-tr-sm shadow-sm text-right">
+          ${text}
+        </div>
+      `;
+      chatStream.insertBefore(wrapper, chatBottomAnchor);
+      chatBottomAnchor.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Reset demo
+    resetDemoBtn.addEventListener('click', () => {
+      showToast('گفتگو بازنشانی شد.');
+      setTimeout(() => location.reload(), 400);
+    });
+  </script>
+</body>
+</html>
