@@ -77,6 +77,38 @@ class TestHomeController(unittest.TestCase):
         self.assertEqual(data["total_results"], 1)
         self.assertEqual(data["results"][0]["product_id"], "p200")
 
+    @patch("controller.home_controller.get_agent")
+    def test_agent_chat_endpoint(self, mock_get_agent):
+        mock_agent = MagicMock()
+        mock_get_agent.return_value = mock_agent
+        mock_agent.chat.return_value = {
+            "session_id": "test_sess_1",
+            "reply": "سلام! این کفش‌ها پیشنهاد می‌شوند.",
+            "search_intent": {
+                "should_search": True,
+                "search_query": "کفش ورزشی",
+                "category_filter": "کفش",
+                "brand_filter": None,
+                "reasoning": "استخراج قصد کاربر برای خرید کفش",
+            },
+            "retrieved_products": [{"product_id": "p1", "title": "کفش ورزشی", "score": 0.9}],
+            "cross_sell_offer": None,
+            "customer_profile": {},
+            "history_length": 2,
+        }
+
+        payload = {
+            "message": "یه کفش ورزشی خوب می‌خوام",
+            "session_id": "test_sess_1",
+        }
+        response = self.client.post("/search/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["session_id"], "test_sess_1")
+        self.assertIn("search_intent", data)
+        self.assertTrue(data["search_intent"]["should_search"])
+        self.assertEqual(data["search_intent"]["search_query"], "کفش ورزشی")
+
 
 if __name__ == "__main__":
     unittest.main()
