@@ -23,7 +23,7 @@ let unknownFaceFrameCount = 0;
 let autoAssignNewFaces = true;
 
 // Backend API URL
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = "http://62.60.194.45:8000";
 
 // Mood Map
 const moodFaMap = {
