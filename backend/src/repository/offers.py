@@ -16,6 +16,11 @@ class Offer:
     last_price_changed_at: Optional[str] = None
     warranty: Optional[str] = None
 
+    @property
+    def price(self) -> int:
+        """Alias for price_toman."""
+        return self.price_toman
+
 
 class Offers:
     def __init__(self, offers: Optional[Dict[str, Offer]] = None):

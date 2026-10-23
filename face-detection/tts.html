@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تبدیل متن فارسی به صدا</title>
+
+  <style>
+    body {
+      font-family: Tahoma, Arial, sans-serif;
+      max-width: 650px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f4f6f9;
+      color: #222;
+    }
+
+    .container {
+      background: white;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px #0001;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    textarea, select, button {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 12px;
+      padding: 12px;
+      font: inherit;
+      border-radius: 8px;
+    }
+
+    textarea, select {
+      border: 1px solid #ccc;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+    }
+
+    button.stop {
+      background: #dc2626;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>تبدیل متن فارسی به صدا</h2>
+
+    <label for="text">متن موردنظر:</label>
+    <textarea id="text">سلام! این یک آزمایش تبدیل متن فارسی به صدا در مرورگر است.</textarea>
+
+    <label for="voice">انتخاب صدای دستگاه:</label>
+    <select id="voice">
+      <option value="">صدای پیش‌فرض مرورگر</option>
+    </select>
+
+    <button id="speak">🔊 پخش صدا</button>
+    <button id="stop" class="stop">⏹ توقف</button>
+
+    <p id="status" role="status" aria-live="polite">
+      در حال بارگذاری صداهای مرورگر...
+    </p>
+  </div>
+
+  <script>
+    const textInput = document.getElementById("text");
+    const voiceSelect = document.getElementById("voice");
+    const speakButton = document.getElementById("speak");
+    const stopButton = document.getElementById("stop");
+    const status = document.getElementById("status");
+
+    const synth = window.speechSynthesis;
+    let voices = [];
+
+    // بررسی پشتیبانی مرورگر
+    if (!("speechSynthesis" in window) ||
+        !("SpeechSynthesisUtterance" in window)) {
+      status.textContent =
+        "مرورگر شما از Web Speech API پشتیبانی نمی‌کند.";
+      speakButton.disabled = true;
+      stopButton.disabled = true;
+    } else {
+      loadVoices();
+
+      // بعضی مرورگرها صداها را با تأخیر بارگذاری می‌کنند.
+      synth.addEventListener("voiceschanged", loadVoices);
+    }
+
+    function loadVoices() {
+      voices = synth.getVoices();
+      const previousValue = voiceSelect.value;
+
+      voiceSelect.replaceChildren();
+
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.textContent = "صدای پیش‌فرض مرورگر";
+      voiceSelect.appendChild(defaultOption);
+
+      // صداهای فارسی را در ابتدای فهرست قرار بده.
+      const sortedVoices = [...voices].sort((a, b) => {
+        const aFa = a.lang.toLowerCase().startsWith("fa");
+        const bFa = b.lang.toLowerCase().startsWith("fa");
+        return Number(bFa) - Number(aFa);
+      });
+
+      sortedVoices.forEach((voice) => {
+        const option = document.createElement("option");
+
+        // از نام و زبان برای شناسایی صدای انتخاب‌شده استفاده می‌کنیم.
+        option.value = voices.indexOf(voice);
+        option.textContent =
+          `${voice.name} (${voice.lang})` +
+          (voice.default ? " — پیش‌فرض" : "");
+
+        voiceSelect.appendChild(option);
+      });
+
+      if (
+        previousValue !== "" &&
+        [...voiceSelect.options].some(
+          option => option.value === previousValue
+        )
+      ) {
+        voiceSelect.value = previousValue;
+      }
+
+      const persianVoices = voices.filter(
+        voice => voice.lang.toLowerCase().startsWith("fa")
+      );
+
+      status.textContent = persianVoices.length
+        ? `${voices.length} صدا پیدا شد؛ ${persianVoices.length} صدای فارسی موجود است.`
+        : `${voices.length} صدا پیدا شد، اما صدای فارسی مشخصی در فهرست نیست.`;
+    }
+
+    speakButton.addEventListener("click", () => {
+      const text = textInput.value.trim();
+
+      if (!text) {
+        status.textContent = "لطفاً ابتدا متن را وارد کنید.";
+        return;
+      }
+
+      // لغو گفتار قبلی
+      synth.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      utterance.lang = "fa-IR";
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      const selectedIndex = voiceSelect.value;
+
+      if (selectedIndex !== "") {
+        const selectedVoice = voices[Number(selectedIndex)];
+
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+          // زبان خود صدای انتخاب‌شده ممکن است با fa-IR فرق داشته باشد.
+        }
+      }
+
+      utterance.onstart = () => {
+        status.textContent = "در حال پخش صدا...";
+      };
+
+      utterance.onend = () => {
+        status.textContent = "پخش متن تمام شد.";
+      };
+
+      utterance.onerror = (event) => {
+        status.textContent =
+          `خطا در پخش صدا: ${event.error}`;
+      };
+
+      synth.speak(utterance);
+    });
+
+    stopButton.addEventListener("click", () => {
+      synth.cancel();
+      status.textContent = "پخش صدا متوقف شد.";
+    });
+  </script>
+</body>
+</html>

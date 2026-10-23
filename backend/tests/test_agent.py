@@ -114,6 +114,23 @@ class TestShoppingAgent(unittest.TestCase):
         self.assertIn("مشکی", intent.search_query)
         self.assertIn("کفش", intent.search_query)
 
+    def test_format_products_context_with_offer_price(self):
+        from repository.offers import Offer
+        mock_offer = Offer(
+            offer_id="off_1",
+            product_id="p_shoe",
+            shop_id="s_1",
+            price_toman=500000,
+        )
+        self.mock_repo.offers.get_cheapest_for_product.return_value = mock_offer
+        doc = Document(
+            page_content="کفش چرم",
+            metadata={"product_id": "p_shoe", "persian_title": "کفش چرم"},
+        )
+        context = self.agent._format_products_context([doc])
+        self.assertIn("500,000 تومان", context)
+        self.assertEqual(mock_offer.price, 500000)
+
 
 if __name__ == "__main__":
     unittest.main()

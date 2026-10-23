@@ -77,9 +77,24 @@
 
     <!-- Assistant Chat Result Section -->
     <div id="assistantSection" class="assistant-section hidden">
-      <div class="section-title">پاسخ دستیار خرید:</div>
+      <div class="assistant-header-row">
+        <div class="section-title">پاسخ دستیار خرید:</div>
+        <div class="tts-actions">
+          <select id="ttsVoiceSelect" class="tts-voice-select" title="انتخاب صدای دستگاه برای خواندن">
+            <option value="">در حال بارگذاری صداها...</option>
+          </select>
+          <label class="tts-toggle" title="خواندن خودکار پاسخ با صدا">
+            <input type="checkbox" id="autoTtsCheckbox" checked>
+            <span>🔊 خواندن صوتی</span>
+          </label>
+          <button id="ttsSpeakBtn" class="tts-btn" title="پخش مجدد صدای پاسخ">🔊 پخش مجدد</button>
+          <button id="ttsStopBtn" class="tts-btn tts-btn-stop" title="توقف پخش صدا">⏹ توقف</button>
+        </div>
+      </div>
       <div id="assistantReply" class="assistant-reply"></div>
+      <div id="ttsStatus" class="tts-status"></div>
 
+      <div id="profileSourceBadge" class="cache-badge hidden"></div>
       <div id="intentBadge" class="intent-badge hidden"></div>
 
       <div id="crossSellBox" class="cross-sell-box hidden"></div>
