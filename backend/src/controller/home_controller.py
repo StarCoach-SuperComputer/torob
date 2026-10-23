@@ -1,19 +1,28 @@
 import os
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, Query, HTTPException, Request
+from fastapi import APIRouter, Query, HTTPException, Request, UploadFile, File
 
 from rag.embedding import Embedding
 from rag.qdrant_store import QdrantProductStore
 from rag.retriever import HybridRetriever
 from rag.agent import ShoppingAgent, CustomerProfile
+from rag.vision import VisionPersonaExtractor
 
 router = APIRouter(prefix="/search", tags=["Search & Retrieval"])
 
-# Global singleton storage, retriever & shopping agent
+# Global singleton storage, retriever, shopping agent & vision extractor
 _store: Optional[QdrantProductStore] = None
 _retriever: Optional[HybridRetriever] = None
 _agent: Optional[ShoppingAgent] = None
+_vision_extractor: Optional[VisionPersonaExtractor] = None
+
+
+def get_vision_extractor() -> VisionPersonaExtractor:
+    global _vision_extractor
+    if _vision_extractor is None:
+        _vision_extractor = VisionPersonaExtractor()
+    return _vision_extractor
 
 
 def get_agent(repo=None) -> ShoppingAgent:
@@ -261,4 +270,93 @@ async def agent_chat(req_body: AgentChatRequest, req: Request):
         return AgentChatResponse(**response_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
+
+
+class VisionProfileRequest(BaseModel):
+    image: str = Field(
+        ...,
+        description="Base64 encoded image string (or data URI 'data:image/jpeg;base64,...') or public image URL",
+    )
+    customer_id: Optional[str] = Field(default=None, description="Optional customer ID")
+
+
+class VisionProfileResponse(BaseModel):
+    customer_id: Optional[str] = None
+    is_young: Optional[bool] = None
+    age_group: Optional[str] = None
+    gender: Optional[str] = None
+    current_clothing: Optional[str] = None
+    clothing_colors_detected: List[str] = Field(default_factory=list)
+    style_preference: Optional[str] = None
+    mood_or_expression: Optional[str] = None
+    budget_tier: Optional[str] = None
+    extra_attributes: Dict[str, Any] = Field(default_factory=dict)
+    summary: str
+
+
+@router.post("/vision/profile", response_model=VisionProfileResponse)
+async def extract_vision_persona(req_body: VisionProfileRequest):
+    """
+    Extracts customer persona (young/old, age range, gender, current clothing, colors, style)
+    from a customer photo using a vision model (GPT-4o / GPT-4o-mini).
+    Accepts Base64 image data or image URL in JSON.
+    """
+    extractor = get_vision_extractor()
+    try:
+        profile = extractor.extract_from_base64_or_url(
+            image_data=req_body.image,
+            customer_id=req_body.customer_id,
+        )
+        extra = profile.extra_attributes or {}
+        return VisionProfileResponse(
+            customer_id=profile.customer_id,
+            is_young=extra.get("is_young"),
+            age_group=profile.age_group,
+            gender=profile.gender,
+            current_clothing=extra.get("current_clothing"),
+            clothing_colors_detected=profile.clothing_colors_detected,
+            style_preference=profile.style_preference,
+            mood_or_expression=profile.mood_or_expression,
+            budget_tier=profile.budget_tier,
+            extra_attributes=extra,
+            summary=profile.to_persona_summary(),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Vision extraction failed: {str(e)}")
+
+
+@router.post("/vision/profile/upload", response_model=VisionProfileResponse)
+async def extract_vision_persona_upload(
+    file: UploadFile = File(..., description="Image file (JPG, PNG, WEBP) of the customer"),
+    customer_id: Optional[str] = Query(None, description="Optional customer ID"),
+):
+    """
+    Multipart file upload endpoint to extract user persona from an image file.
+    """
+    extractor = get_vision_extractor()
+    try:
+        contents = await file.read()
+        mime_type = file.content_type or "image/jpeg"
+        profile = extractor.extract_from_bytes(
+            image_bytes=contents,
+            mime_type=mime_type,
+            customer_id=customer_id,
+        )
+        extra = profile.extra_attributes or {}
+        return VisionProfileResponse(
+            customer_id=profile.customer_id,
+            is_young=extra.get("is_young"),
+            age_group=profile.age_group,
+            gender=profile.gender,
+            current_clothing=extra.get("current_clothing"),
+            clothing_colors_detected=profile.clothing_colors_detected,
+            style_preference=profile.style_preference,
+            mood_or_expression=profile.mood_or_expression,
+            budget_tier=profile.budget_tier,
+            extra_attributes=extra,
+            summary=profile.to_persona_summary(),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image upload extraction failed: {str(e)}")
+
 

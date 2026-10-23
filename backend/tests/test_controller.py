@@ -109,6 +109,36 @@ class TestHomeController(unittest.TestCase):
         self.assertTrue(data["search_intent"]["should_search"])
         self.assertEqual(data["search_intent"]["search_query"], "کفش ورزشی")
 
+    @patch("controller.home_controller.get_vision_extractor")
+    def test_vision_profile_endpoint(self, mock_get_extractor):
+        from rag.agent import CustomerProfile
+        mock_extractor = MagicMock()
+        mock_get_extractor.return_value = mock_extractor
+        mock_extractor.extract_from_base64_or_url.return_value = CustomerProfile(
+            customer_id="cust_99",
+            age_group="young_adult (22-26)",
+            gender="male",
+            style_preference="اسپرت",
+            mood_or_expression="شاد",
+            clothing_colors_detected=["مشکی", "سفید"],
+            budget_tier="mid-range",
+            extra_attributes={"is_young": True, "current_clothing": "تی‌شرت مشکی و شلوار جین"},
+        )
+
+        payload = {
+            "image": "data:image/jpeg;base64,fakeimagedata123",
+            "customer_id": "cust_99",
+        }
+        response = self.client.post("/search/vision/profile", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["customer_id"], "cust_99")
+        self.assertTrue(data["is_young"])
+        self.assertEqual(data["gender"], "male")
+        self.assertEqual(data["current_clothing"], "تی‌شرت مشکی و شلوار جین")
+        self.assertIn("مشکی", data["clothing_colors_detected"])
+        self.assertEqual(data["style_preference"], "اسپرت")
+
 
 if __name__ == "__main__":
     unittest.main()

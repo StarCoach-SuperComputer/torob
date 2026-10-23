@@ -3,6 +3,7 @@ from .qdrant_store import QdrantProductStore
 from .retriever import HybridRetriever, rrf_merge
 from .reranker import Reranker
 from .agent import ShoppingAgent, CustomerProfile, SessionState, CrossSellOffer, SearchIntent
+from .vision import VisionPersonaExtractor
 
 __all__ = [
     "Embedding",
@@ -16,4 +17,5 @@ __all__ = [
     "SessionState",
     "CrossSellOffer",
     "SearchIntent",
+    "VisionPersonaExtractor",
 ]
